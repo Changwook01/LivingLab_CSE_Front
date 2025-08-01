@@ -4,3 +4,47 @@
 
 expo-env.d.ts
 # @end expo-cli
+
+# ───────── 기본 Node & React Native ─────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log*
+
+# ───────── Expo 관련 ─────────
+.expo/
+.expo-shared/
+
+# ───────── iOS & Android 빌드 파일 ─────────
+ios/
+android/
+
+# ───────── 환경 파일 ─────────
+.env
+.env.local
+.env.development
+.env.production
+
+# ───────── 캐시 / 로그 파일 ─────────
+*.log
+*.tmp
+dist/
+web-build/
+coverage/
+
+# ───────── IDE 관련 ─────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ───────── 시스템 파일 ─────────
+.DS_Store
+Thumbs.db
+
+# ───────── Metro Bundler 캐시 ─────────
+.expo/
+.expo-shared/
