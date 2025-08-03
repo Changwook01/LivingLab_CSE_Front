@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
+import MapScreen from './MapScreen'; // ⬅️ 이 줄을 추가하세요
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState("home");
@@ -104,9 +105,7 @@ export default function App() {
 
       case "zone":
         return (
-          <View style={styles.screen}>
-            <Text style={styles.headerTitle}>영업 구역 화면</Text>
-          </View>
+          <MapScreen />
         );
 
       case "register":
