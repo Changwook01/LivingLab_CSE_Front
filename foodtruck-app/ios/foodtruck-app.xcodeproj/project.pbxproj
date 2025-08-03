@@ -22,7 +22,7 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = foodtruckapp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = foodtruckapp/Info.plist; sourceTree = "<group>"; };
 		23A9068DA4FED66502E9C834 /* Pods-foodtruckapp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-foodtruckapp.debug.xcconfig"; path = "Target Support Files/Pods-foodtruckapp/Pods-foodtruckapp.debug.xcconfig"; sourceTree = "<group>"; };
-		2C8E46CE57D4CE0298C1B7C3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = foodtruckapp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2C8E46CE57D4CE0298C1B7C3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = PrivacyInfo.xcprivacy; path = foodtruckapp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3ACD12B930C87B857C72FE72 /* libPods-foodtruckapp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-foodtruckapp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		90B217216547E3DA360168E5 /* Pods-foodtruckapp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-foodtruckapp.release.xcconfig"; path = "Target Support Files/Pods-foodtruckapp/Pods-foodtruckapp.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = foodtruckapp/SplashScreen.storyboard; sourceTree = "<group>"; };
@@ -49,11 +49,11 @@
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
 				F11748442D0722820044C1D9 /* foodtruckapp-Bridging-Header.h */,
-				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
-				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				2C8E46CE57D4CE0298C1B7C3 /* PrivacyInfo.xcprivacy */,
+				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
+				BB2F792B24A3F905000567C9 /* Supporting */,
 			);
 			name = foodtruckapp;
 			sourceTree = "<group>";
@@ -81,7 +81,6 @@
 				23A9068DA4FED66502E9C834 /* Pods-foodtruckapp.debug.xcconfig */,
 				90B217216547E3DA360168E5 /* Pods-foodtruckapp.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -170,7 +169,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "foodtruckapp" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "foodtruck-app" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -351,7 +350,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.foodtruckapp;
-				PRODUCT_NAME = "foodtruckapp";
+				PRODUCT_NAME = foodtruckapp;
 				SWIFT_OBJC_BRIDGING_HEADER = "foodtruckapp/foodtruckapp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -382,7 +381,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.foodtruckapp;
-				PRODUCT_NAME = "foodtruckapp";
+				PRODUCT_NAME = foodtruckapp;
 				SWIFT_OBJC_BRIDGING_HEADER = "foodtruckapp/foodtruckapp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -445,10 +444,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -503,10 +499,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
@@ -526,7 +519,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "foodtruckapp" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "foodtruck-app" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
