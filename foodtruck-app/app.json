@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.foodtruckapp"
+      "bundleIdentifier": "com.anonymous.foodtruckapp",
+      "config": { 
+        "googleMapsApiKey": "AIzaSyDBMrTMXWn7QFhlIJnRkETKITmqtt5qLIo" 
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,10 +25,23 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.foodtruckapp"
+      "package": "com.anonymous.foodtruckapp",
+      "config": { 
+        "googleMaps": {
+          "apiKey": "AIzaSyDBMrTMXWn7QFhlIJnRkETKITmqtt5qLIo" 
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [ 
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "영업 위치 공유를 위해 현재 위치 정보가 필요합니다."
+        }
+      ]
+    ]
   }
 }
