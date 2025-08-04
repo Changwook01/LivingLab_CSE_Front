@@ -1,15 +1,44 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native"; // TouchableOpacity도 import 필요
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { apiService } from '../services/api';
+import { useAppStore } from "../stores/useAppStore";
 
 export default function SaleStatus({ isOpen }) {
-  const [isOperating, setIsOperating] = useState(isOpen ?? false); // isOpen이 undefined일 경우 false
+  const [isOperating, setIsOperating] = useState(isOpen ?? false);
+  const [todaySales, setTodaySales] = useState({
+    orderCount: 0,
+    totalRevenue: 0,
+    topMenu: '없음'
+  });
+
+  // ✅ zustand store에서 로그인한 사용자 정보 가져오기
+  const user = useAppStore((state) => state.user);
+
+  useEffect(() => {
+    // ✅ userData → user로 수정
+    if (user && user.role === 'PARTNER') {
+      fetchTodaySales();
+    }
+  }, [user]);
+
+  const fetchTodaySales = async () => {
+    try {
+      const salesData = await apiService.getTodaySales();
+      setTodaySales(salesData);
+    } catch (error) {
+      console.error('Failed to fetch today sales:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
       {/* 상단 헤더 */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>푸드트럭 파트너</Text>
-        <Text style={styles.headerSubtitle}>김창업님</Text>
+        {/* ✅ user.name 출력 */}
+        <Text style={styles.headerSubtitle}>
+          {user ? user.name : '사용자'}님
+        </Text>
       </View>
 
       {/* 영업 상태 표시 */}
@@ -37,6 +66,25 @@ export default function SaleStatus({ isOpen }) {
         <Text style={styles.statusNotice}>
           영업 시작 시 실시간 위치가 공유됩니다
         </Text>
+
+        {/* ✅ userData → user로 수정 */}
+        {user && user.role === 'PARTNER' && (
+          <View style={styles.salesInfo}>
+            <Text style={styles.salesTitle}>오늘 매출</Text>
+            <View style={styles.salesRow}>
+              <Text style={styles.salesLabel}>주문 수:</Text>
+              <Text style={styles.salesValue}>{todaySales.orderCount}건</Text>
+            </View>
+            <View style={styles.salesRow}>
+              <Text style={styles.salesLabel}>총 매출:</Text>
+              <Text style={styles.salesValue}>{todaySales.totalRevenue.toLocaleString()}원</Text>
+            </View>
+            <View style={styles.salesRow}>
+              <Text style={styles.salesLabel}>인기 메뉴:</Text>
+              <Text style={styles.salesValue}>{todaySales.topMenu}</Text>
+            </View>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -51,7 +99,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
   statusBar: {
     height: 44,
     backgroundColor: "#FF6B35",
@@ -64,13 +111,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     paddingBottom: 56,
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    flexDirection: "row",
-    justifyContent: "space-between",
   },
   headerTitle: { fontSize: 20, fontWeight: "700" },
   headerSubtitle: { fontSize: 14, color: "#6b7280" },
@@ -103,4 +143,31 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   btnPrimaryText: { color: "white", fontWeight: "500" },
-  })
+  
+  salesInfo: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+  },
+  salesTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#333',
+  },
+  salesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  salesLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  salesValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+});

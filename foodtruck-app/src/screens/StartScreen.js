@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,38 @@ import {
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import StatusBarHeader from '../components/StatusBarHeader';
+import LoginScreen from './LoginScreen';
 
 // 🚀 시작 화면
 const StartScreen = ({ onStart }) => {
+  const [showLogin, setShowLogin] = useState(false);
+  const [selectedUserType, setSelectedUserType] = useState(null);
+
+  const handleUserTypeSelect = (userType) => {
+    setSelectedUserType(userType);
+    setShowLogin(true);
+  };
+
+  const handleLoginSuccess = (loginData, userType) => {
+    setShowLogin(false);
+    onStart(loginData, userType);
+  };
+
+  const handleBackToStart = () => {
+    setShowLogin(false);
+    setSelectedUserType(null);
+  };
+
+  if (showLogin) {
+    return (
+      <LoginScreen
+        userType={selectedUserType}
+        onLoginSuccess={handleLoginSuccess}
+        onBack={handleBackToStart}
+      />
+    );
+  }
+
   return (
     <View style={styles.startContainer}>
       <View style={styles.logoContainer}>
@@ -24,7 +53,7 @@ const StartScreen = ({ onStart }) => {
 
         <TouchableOpacity
           style={styles.userTypeButton}
-          onPress={() => {onStart}}
+          onPress={() => handleUserTypeSelect('customer')}
         >
           <View style={styles.userTypeIconContainer}>
             <Text style={styles.userTypeIcon}>🍽️</Text>
@@ -40,7 +69,7 @@ const StartScreen = ({ onStart }) => {
 
         <TouchableOpacity
           style={styles.userTypeButton}
-          onPress={onStart} 
+          onPress={() => handleUserTypeSelect('partner')}
         >
           <View
             style={[
@@ -72,7 +101,7 @@ const StartScreen = ({ onStart }) => {
 // 하단 탭 네비게이터
 const Tab = createBottomTabNavigator();
 
-const CustomerAppNavigator = () => {
+const CustomerAppNavigator = ({ userData }) => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -90,7 +119,11 @@ const CustomerAppNavigator = () => {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="홈" component={CustomerHomeScreen} />
+      <Tab.Screen 
+        name="홈" 
+        component={CustomerHomeScreen}
+        initialParams={{ userData }}
+      />
       <Tab.Screen name="검색" component={SearchScreen} />
       <Tab.Screen name="주문내역" component={OrderHistoryScreen} />
       <Tab.Screen name="마이페이지" component={CustomerMyPageScreen} />
@@ -99,14 +132,21 @@ const CustomerAppNavigator = () => {
 };
 
 // 각 탭의 간단한 화면 정의
-const CustomerHomeScreen = () => (
+const CustomerHomeScreen = ({ route }) => {
+  const userData = route?.params?.userData;
+  
+  return (
     <View style={{ flex: 1 }}>
-    <StatusBarHeader />
-  <View style={styles.screenContainer}>
-    <Text style={styles.screenTitle}>홈 화면</Text>
-  </View>
-  </View>
-);
+      <StatusBarHeader />
+      <View style={styles.screenContainer}>
+        <Text style={styles.screenTitle}>홈 화면</Text>
+        <Text style={styles.welcomeText}>
+          안녕하세요, {userData ? userData.name : '사용자'}님!
+        </Text>
+      </View>
+    </View>
+  );
+};
 const SearchScreen = () => (
   <View style={styles.screenContainer}>
     <Text style={styles.screenTitle}>검색 화면</Text>
@@ -171,6 +211,11 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 20,
     fontWeight: "bold",
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 10,
   },
 });
 

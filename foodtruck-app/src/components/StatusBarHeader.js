@@ -1,28 +1,20 @@
 import React from "react";
-import { View, Text, StyleSheet, SafeAreaView} from "react-native";
+import { View, StyleSheet, SafeAreaView } from "react-native";
+
 export default function StatusBarHeader() {
   return (
     <SafeAreaView style={styles.container}>
-    <View style={styles.statusBar}>
-      <Text style={styles.statusText}>9:41</Text>
-      <Text style={styles.statusText}>📶 📶 🔋</Text>
-    </View>
+      <View style={styles.statusBar} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  statusBar: {
-    height: 44,
-    backgroundColor: "#FF6B35",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
+  container: {
+    backgroundColor: "#FF6B35", // ✅ SafeAreaView도 색상 동일하게 설정
   },
-  statusText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "500",
+  statusBar: {
+    height: 10,                 // ✅ iOS 상태바 높이
+    backgroundColor: "#FF6B35", // ✅ 상단바 색상
   },
 });
