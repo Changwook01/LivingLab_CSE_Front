@@ -4,8 +4,10 @@ import HomeScreen from "./src/screens/HomeScreen";
 import MenuScreen from "./src/screens/MenuScreen";
 import ZoneScreen from "./src/screens/ZoneScreen";
 import MyPageScreen from "./src/screens/MyPageScreen";
+import { StartScreen } from "./src/screens/StartScreen";
 
 export default function App() {
+  const [isStarted, setIsStarted] = useState(false);
   const [selectedTab, setSelectedTab] = useState("home");
 
   const renderScreen = () => {
@@ -29,6 +31,10 @@ export default function App() {
     { id: "zone", icon: "📍", label: "영업지역" },
     { id: "mypage", icon: "👤", label: "마이페이지" },
   ];
+
+  if (!isStarted) {
+    return <StartScreen onStart={() => setIsStarted(true)} />;
+  }
 
   return (
     <View style={styles.container}>
