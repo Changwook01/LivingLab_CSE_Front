@@ -15,6 +15,9 @@ const ZoneScreen = () => {
   const [selectedZone, setSelectedZone] = useState(null);
   const [mapRegion, setMapRegion] = useState(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isOperating, setIsOperating] = useState(false);
+  const [isInOperatingZone, setIsInOperatingZone] = useState(false);
+  const [truckId, setTruckId] = useState(7); // 임시 truckId, 나중에 실제 값으로 변경
 
   useEffect(() => {
     (async () => {
@@ -151,6 +154,11 @@ const ZoneScreen = () => {
           console.log(`📍 구역 ${index + 1}: ${zone.name} (${zone.latitude}, ${zone.longitude})`);
         });
         
+        // 현재 위치가 영업구역 내에 있는지 확인
+        if (userLocation) {
+          checkIfInOperatingZone(userLocation.latitude, userLocation.longitude, zonesData);
+        }
+        
         // 강제로 리렌더링을 위한 상태 업데이트
         setTimeout(() => {
           console.log('🔄 구역 데이터 강제 업데이트');
@@ -158,6 +166,7 @@ const ZoneScreen = () => {
         }, 200);
       } else {
         console.log('⚠️ 구역 데이터가 없습니다.');
+        setIsInOperatingZone(false);
       }
 
     } catch (error) {
@@ -197,6 +206,118 @@ const ZoneScreen = () => {
   const handleRegionChangeComplete = (newRegion) => {
     // 자동 새로고침 비활성화 - 수동 새로고침만 사용
     console.log('🗺️ 지도 영역 변경 완료 (자동 새로고침 비활성화)');
+  };
+
+  // 현재 위치가 영업구역 내에 있는지 확인하는 함수
+  const checkIfInOperatingZone = (userLat, userLon, zones) => {
+    if (!zones || zones.length === 0) {
+      setIsInOperatingZone(false);
+      return false;
+    }
+
+    // 각 구역의 반지름 (미터 단위)
+    const zoneRadius = 100; // 100미터 반지름
+
+    for (const zone of zones) {
+      const distance = calculateDistance(
+        userLat, userLon,
+        zone.latitude, zone.longitude
+      );
+
+      if (distance <= zoneRadius) {
+        console.log(`✅ 영업구역 내 위치 확인: ${zone.name} (거리: ${distance.toFixed(2)}m)`);
+        setIsInOperatingZone(true);
+        return true;
+      }
+    }
+
+    console.log('❌ 영업구역 밖 위치');
+    setIsInOperatingZone(false);
+    return false;
+  };
+
+  // 두 지점 간의 거리 계산 (미터 단위)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371000; // 지구 반지름 (미터)
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // 영업 시작 API 호출
+  const startBusiness = async (latitude, longitude) => {
+    try {
+      console.log('🚀 영업 시작 API 호출');
+      const url = `${API_BASE_URL}/api/food-trucks/${truckId}/start`;
+      
+      const requestBody = {
+        latitude: latitude,
+        longitude: longitude
+      };
+      
+      console.log('📡 요청 URL:', url);
+      console.log('📦 요청 데이터:', requestBody);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      console.log('📡 응답 상태:', response.status);
+      
+      if (response.ok) {
+        const result = await response.text();
+        console.log('✅ 영업 시작 성공:', result);
+        setIsOperating(true);
+        return true;
+      } else {
+        console.error('❌ 영업 시작 실패:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ 영업 시작 API 오류:', error);
+      return false;
+    }
+  };
+
+  // 영업 종료 API 호출
+  const stopBusiness = async () => {
+    try {
+      console.log('🛑 영업 종료 API 호출');
+      const url = `${API_BASE_URL}/api/food-trucks/${truckId}/stop`;
+      
+      console.log('📡 요청 URL:', url);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('📡 응답 상태:', response.status);
+      
+      if (response.ok) {
+        const result = await response.text();
+        console.log('✅ 영업 종료 성공:', result);
+        setIsOperating(false);
+        return true;
+      } else {
+        console.error('❌ 영업 종료 실패:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ 영업 종료 API 오류:', error);
+      return false;
+    }
   };
   
   if (errorMsg) {
@@ -295,9 +416,57 @@ const ZoneScreen = () => {
         <Text style={styles.refreshButtonText}>🗺️ 구역 로드</Text>
       </TouchableOpacity>
 
+      {/* 영업 시작/종료 버튼 */}
+      <TouchableOpacity 
+        style={[
+          styles.operatingButton,
+          isInOperatingZone ? styles.operatingButtonActive : styles.operatingButtonInactive,
+          isOperating && styles.operatingButtonOperating
+        ]}
+        onPress={async () => {
+          if (isInOperatingZone) {
+            if (!isOperating) {
+              // 영업 시작
+              if (userLocation) {
+                const success = await startBusiness(userLocation.latitude, userLocation.longitude);
+                if (!success) {
+                  console.log('❌ 영업 시작에 실패했습니다.');
+                }
+              } else {
+                console.log('❌ 위치 정보가 없습니다.');
+              }
+            } else {
+              // 영업 종료
+              const success = await stopBusiness();
+              if (!success) {
+                console.log('❌ 영업 종료에 실패했습니다.');
+              }
+            }
+          } else {
+            console.log('❌ 영업구역 밖에서는 영업할 수 없습니다.');
+          }
+        }}
+        disabled={!isInOperatingZone}
+      >
+        <Text style={styles.operatingButtonText}>
+          {isOperating ? '🛑 영업 종료' : '🚀 영업 시작'}
+        </Text>
+      </TouchableOpacity>
+
       {/* 선택된 구역 정보 오버레이 */}
       {selectedZone && (
         <View style={styles.zoneInfoOverlay}>
+          {/* X 버튼 */}
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={() => {
+              console.log('❌ 구역 정보 닫기');
+              setSelectedZone(null);
+            }}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+          
           <View style={styles.zoneInfoContainer}>
             <Text style={styles.zoneInfoTitle}>{selectedZone.name}</Text>
             <Text style={styles.zoneInfoAddress}>{selectedZone.address}</Text>
@@ -421,6 +590,50 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   refreshButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FF6B35',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  operatingButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  operatingButtonActive: {
+    backgroundColor: '#4CAF50', // 초록색 (영업 가능)
+  },
+  operatingButtonInactive: {
+    backgroundColor: '#9E9E9E', // 회색 (영업 불가)
+  },
+  operatingButtonOperating: {
+    backgroundColor: '#F44336', // 빨간색 (영업 중)
+  },
+  operatingButtonText: {
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
