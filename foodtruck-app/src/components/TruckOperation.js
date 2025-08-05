@@ -1,23 +1,33 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { useAppStore } from "../stores/useAppStore";
 
 export default function TruckOperation() {
+  const todaySales = useAppStore((state) => state.todaySales);
+
   return (
     <View style={styles.card}>
-                  <Text style={styles.cardTitle}>오늘의 판매 현황</Text>
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.textGray}>주문 수</Text>
-                    <Text style={styles.textBold}>12건</Text>
-                  </View>
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.textGray}>판매 금액</Text>
-                    <Text style={styles.textBold}>256,000원</Text>
-                  </View>
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.textGray}>인기 메뉴</Text>
-                    <Text style={styles.textBold}>더블 치즈버거</Text>
-                  </View>
-                </View>
+      <Text style={styles.cardTitle}>오늘의 판매 현황</Text>
+
+      <View style={styles.rowBetween}>
+        <Text style={styles.textGray}>주문 수</Text>
+        <Text style={styles.textBold}>{todaySales?.orderCount ?? 0}건</Text>
+      </View>
+
+      <View style={styles.rowBetween}>
+        <Text style={styles.textGray}>판매 금액</Text>
+        <Text style={styles.textBold}>
+          {todaySales?.totalRevenue != null
+            ? todaySales.totalRevenue.toLocaleString() + "원"
+            : "0원"}
+        </Text>
+      </View>
+
+      <View style={styles.rowBetween}>
+        <Text style={styles.textGray}>인기 메뉴</Text>
+        <Text style={styles.textBold}>{todaySales?.topMenu ?? "없음"}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -41,5 +51,4 @@ const styles = StyleSheet.create({
   },
   textGray: { color: "#6b7280" },
   textBold: { fontWeight: "700" },
-
 });

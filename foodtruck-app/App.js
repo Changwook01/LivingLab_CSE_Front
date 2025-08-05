@@ -4,16 +4,25 @@ import HomeScreen from "./src/screens/HomeScreen";
 import MenuScreen from "./src/screens/MenuScreen";
 import ZoneScreen from "./src/screens/ZoneScreen";
 import MyPageScreen from "./src/screens/MyPageScreen";
-import { StartScreen } from "./src/screens/StartScreen";
+import { StartScreen, CustomerAppNavigator } from "./src/screens/StartScreen";
+import { AuthProvider } from "./src/context/AuthContext";
 
 export default function App() {
   const [isStarted, setIsStarted] = useState(false);
   const [selectedTab, setSelectedTab] = useState("home");
+  const [userData, setUserData] = useState(null);
+  const [userType, setUserType] = useState(null);
+
+  const handleStart = (loginData, type) => {
+    setUserData(loginData);
+    setUserType(type);
+    setIsStarted(true);
+  };
 
   const renderScreen = () => {
     switch (selectedTab) {
       case "home":
-        return <HomeScreen />;
+        return <HomeScreen userData={userData} />;
       case "menu":
         return <MenuScreen />;
       case "zone":
@@ -21,7 +30,7 @@ export default function App() {
       case "mypage":
         return <MyPageScreen />;
       default:
-        return <HomeScreen />;
+        return <HomeScreen userData={userData} />;
     }
   };
 
@@ -32,36 +41,38 @@ export default function App() {
     { id: "mypage", icon: "👤", label: "마이페이지" },
   ];
 
-  if (!isStarted) {
-    return <StartScreen onStart={() => setIsStarted(true)} />;
-  }
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.screen}>{renderScreen()}</View>
-      <View style={styles.tabBar}>
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab.id}
-            style={styles.tabItem}
-            onPress={() => setSelectedTab(tab.id)}
-          >
-            <Text style={{ fontSize: 24 }}>
-              {tab.icon}
-            </Text>
-            <Text
-              style={[
-                styles.tabLabel,
-                selectedTab === tab.id && styles.tabLabelActive,
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
+   return (
+       <AuthProvider>
+         {!isStarted ? (
+           <StartScreen onStart={handleStart} />
+         ) : userType === "customer" ? (
+           <CustomerAppNavigator userData={userData} />
+         ) : (
+           <View style={styles.container}>
+             <View style={styles.screen}>{renderScreen()}</View>
+             <View style={styles.tabBar}>
+               {tabs.map((tab) => (
+                 <TouchableOpacity
+                   key={tab.id}
+                   style={styles.tabItem}
+                   onPress={() => setSelectedTab(tab.id)}
+                 >
+                   <Text style={{ fontSize: 24 }}>{tab.icon}</Text>
+                   <Text
+                     style={[
+                       styles.tabLabel,
+                       selectedTab === tab.id && styles.tabLabelActive,
+                     ]}
+                   >
+                     {tab.label}
+                   </Text>
+                 </TouchableOpacity>
+               ))}
+             </View>
+           </View>
+         )}
+       </AuthProvider>
+    );
 }
 
 const styles = StyleSheet.create({
