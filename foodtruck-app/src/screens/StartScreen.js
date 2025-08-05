@@ -11,7 +11,7 @@ import StatusBarHeader from '../components/StatusBarHeader';
 import LoginScreen from './LoginScreen';
 
 // 🚀 시작 화면
-const StartScreen = ({ onStart }) => {
+const StartScreen = ({ onStart, onSignup }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [selectedUserType, setSelectedUserType] = useState(null);
 
@@ -90,9 +90,12 @@ const StartScreen = ({ onStart }) => {
       </View>
 
       <View style={styles.footerContainer}>
-        <Text style={styles.footerText}>
-          계정이 없으신가요? <Text style={styles.footerLink}>회원가입</Text>
+      <Text>
+        계정이 없으신가요?{" "}
+        <Text style={styles.footerLink} onPress={onSignup}>
+          회원가입
         </Text>
+      </Text>
       </View>
     </View>
   );
