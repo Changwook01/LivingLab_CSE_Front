@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, Platform, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, Platform, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.78:8080'; // ◀️ 본인 IP 주소로 수정!
+const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.87:8080'; // ◀️ 본인 IP 주소로 수정!
 
 const ZoneScreen = () => {
   const [region, setRegion] = useState(null);
@@ -453,6 +453,50 @@ const ZoneScreen = () => {
         </Text>
       </TouchableOpacity>
 
+      {/* 구역 목록 오버레이 */}
+      {zones && zones.length > 0 && (
+        <View style={styles.zoneListOverlay}>
+          <View style={styles.zoneListHeader}>
+            <Text style={styles.zoneListTitle}>주변 허가구역 목록</Text>
+            <Text style={styles.zoneListCount}>{zones.length}개 구역</Text>
+          </View>
+          <ScrollView style={styles.zoneListScroll} showsVerticalScrollIndicator={false}>
+            {zones.map((zone, index) => (
+              <TouchableOpacity
+                key={`list-${zone.id}`}
+                style={[
+                  styles.zoneListItem,
+                  selectedZone?.id === zone.id && styles.zoneListItemSelected
+                ]}
+                onPress={() => {
+                  setSelectedZone(zone);
+                  console.log(`📋 목록에서 구역 선택: ${zone.name}`);
+                }}
+              >
+                <View style={styles.zoneListItemContent}>
+                  <Text style={styles.zoneListItemName}>{zone.name}</Text>
+                  <Text style={styles.zoneListItemAddress}>{zone.address}</Text>
+                  <View style={styles.zoneListItemMeta}>
+                    <Text style={styles.zoneListItemDistance}>
+                      📍 {calculateDistance(
+                        userLocation?.latitude || 0,
+                        userLocation?.longitude || 0,
+                        zone.latitude,
+                        zone.longitude
+                      ).toFixed(0)}m
+                    </Text>
+                    <Text style={styles.zoneListItemId}>ID: {zone.id}</Text>
+                  </View>
+                </View>
+                <View style={styles.zoneListItemArrow}>
+                  <Text style={styles.zoneListItemArrowText}>▶</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* 선택된 구역 정보 오버레이 */}
       {selectedZone && (
         <View style={styles.zoneInfoOverlay}>
@@ -637,6 +681,95 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+  },
+  zoneListOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    maxHeight: '50%',
+  },
+  zoneListHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  zoneListTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  zoneListCount: {
+    fontSize: 14,
+    color: '#666',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  zoneListScroll: {
+    maxHeight: 300,
+  },
+  zoneListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: 'white',
+  },
+  zoneListItemSelected: {
+    backgroundColor: '#fff3e0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF6B35',
+  },
+  zoneListItemContent: {
+    flex: 1,
+  },
+  zoneListItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  zoneListItemAddress: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 6,
+  },
+  zoneListItemMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  zoneListItemDistance: {
+    fontSize: 12,
+    color: '#FF6B35',
+    fontWeight: '500',
+  },
+  zoneListItemId: {
+    fontSize: 12,
+    color: '#999',
+  },
+  zoneListItemArrow: {
+    marginLeft: 10,
+  },
+  zoneListItemArrowText: {
+    fontSize: 16,
+    color: '#ccc',
   },
 });
 
