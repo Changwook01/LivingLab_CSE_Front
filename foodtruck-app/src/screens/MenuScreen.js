@@ -12,120 +12,19 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import StatusBarHeader from '../components/StatusBarHeader';
+import { useAppStore } from '../stores/useAppStore';
 
 // 메뉴 화면
 const MenuScreen = () => {
+  const menuData = useAppStore((state) => state.menus);  // ✅ 메뉴 데이터를 zustand에서 가져옴
   const [activeCategory, setActiveCategory] = useState('전체');
-  const [menuData, setMenuData] = useState([
-    {
-      id: 1,
-      name: "더블 치즈버거",
-      price: 8500,
-      imageUrl: "🍔",
-      category: "메인메뉴",
-      isAvailable: true,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 2,
-      name: "베이컨 버거",
-      price: 9000,
-      imageUrl: "🍔",
-      category: "메인메뉴",
-      isAvailable: true,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 3,
-      name: "치킨 버거",
-      price: 8000,
-      imageUrl: "🍔",
-      category: "메인메뉴",
-      isAvailable: false,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 4,
-      name: "감자튀김",
-      price: 4000,
-      imageUrl: "🍟",
-      category: "사이드메뉴",
-      isAvailable: true,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 5,
-      name: "치킨너겟",
-      price: 5000,
-      imageUrl: "🍗",
-      category: "사이드메뉴",
-      isAvailable: true,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 6,
-      name: "양파링",
-      price: 4500,
-      imageUrl: "🧅",
-      category: "사이드메뉴",
-      isAvailable: true,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 7,
-      name: "콜라",
-      price: 2000,
-      imageUrl: "🥤",
-      category: "음료",
-      isAvailable: true,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 8,
-      name: "수제 레몬에이드",
-      price: 3500,
-      imageUrl: "🍋",
-      category: "음료",
-      isAvailable: true,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 9,
-      name: "아메리카노",
-      price: 3000,
-      imageUrl: "☕",
-      category: "음료",
-      isAvailable: false,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 10,
-      name: "아이스크림",
-      price: 3000,
-      imageUrl: "🍦",
-      category: "디저트",
-      isAvailable: true,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    },
-    {
-      id: 11,
-      name: "초콜릿 쿠키",
-      price: 2500,
-      imageUrl: "🍪",
-      category: "디저트",
-      isAvailable: true,
-      foodTruck: { id: 1, name: "맛있는 버거트럭" }
-    }
-  ]);
 
   // 카테고리 목록 생성
   const categories = ['전체', ...new Set(menuData.map(menu => menu.category))];
-  
-  // 선택된 카테고리에 따른 메뉴 필터링
   const filteredMenus = activeCategory === '전체' 
     ? menuData 
     : menuData.filter(menu => menu.category === activeCategory);
-
+    
   // 카테고리별 메뉴 개수
   const getCategoryCount = (category) => {
     if (category === '전체') return menuData.length;

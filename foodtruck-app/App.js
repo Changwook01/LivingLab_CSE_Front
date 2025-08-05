@@ -21,6 +21,7 @@ export default function App() {
     setUserData(loginData);
     setUserType(type);
     setIsStarted(true);
+    setCurrentScreen("main"); // 로그인 성공 시 화면 상태를 main으로 변경
   };
 
   const renderScreen = () => {
@@ -59,10 +60,10 @@ export default function App() {
     {currentScreen === "businessSignup" && (
       <BusinessSignupScreen onBack={() => setCurrentScreen("signup")} />
     )}
-    {isStarted && userType === "customer" && (
+    {currentScreen === "main" && userType === "customer" && (
       <CustomerAppNavigator userData={userData} />
     )}
-    {isStarted && userType !== "customer" && (
+    {currentScreen === "main" && userType !== "customer" && (
       <View style={styles.container}>
         <View style={styles.screen}>{renderScreen()}</View>
         <View style={styles.tabBar}>

@@ -14,7 +14,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF6B35", // ✅ SafeAreaView도 색상 동일하게 설정
   },
   statusBar: {
-    height: 10,                 // ✅ iOS 상태바 높이
+    paddingTop: 56,                // ✅ iOS 상태바 높이
+    paddingBottom: 16,           // ✅ 상태바 아래 여백
     backgroundColor: "#FF6B35", // ✅ 상단바 색상
   },
 });

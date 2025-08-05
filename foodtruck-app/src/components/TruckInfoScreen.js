@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useAppStore } from '../stores/useAppStore';
 
-const TruckInfoScreen = ({ truck }) => {
-  const truckInfo = truck || {
-    name: '맛있는 버거트럭',
-    number: '12가 3456',
-    size: '중형',
-  };
+const getDisplayText = (value, fallback = '정보 없음') =>
+  value?.trim?.() ? value : fallback;
+
+const TruckInfoScreen = () => {
+  const foodTruck = useAppStore((state) => state.foodTruck);
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -16,12 +17,16 @@ const TruckInfoScreen = ({ truck }) => {
 
       <View style={styles.truckInfoRow}>
         <View style={styles.truckImage}>
-          <Text>🚚</Text>
+          <Text style={{ fontSize: 28 }}>🚚</Text>
         </View>
         <View>
-          <Text style={styles.truckName}>{truckInfo.name}</Text>
-          <Text style={styles.truckDetail}>차량번호:  {truckInfo.number}</Text>
-          <Text style={styles.truckDetail}>크기:{truckInfo.size}</Text>
+          <Text style={styles.truckName}>{getDisplayText(foodTruck?.name, '이름 없음')}</Text>
+          <Text style={styles.truckDetail}>
+            차량번호: {getDisplayText(foodTruck?.vehicleNumber)}
+          </Text>
+          <Text style={styles.truckDetail}>
+            크기: {getDisplayText(foodTruck?.size)}
+          </Text>
         </View>
       </View>
 
@@ -37,52 +42,52 @@ export default TruckInfoScreen;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 12,
     marginVertical: 8,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
   cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
-  cardTitle: { fontSize: 18, fontWeight: "700" },
-  cardEdit: { fontSize: 14, color: "#3b82f6" },
+  cardTitle: { fontSize: 18, fontWeight: '700' },
+  cardEdit: { fontSize: 14, color: '#3b82f6' },
 
-  truckInfoRow: { flexDirection: "row", marginBottom: 12 },
+  truckInfoRow: { flexDirection: 'row', marginBottom: 12 },
   truckImage: {
     width: 80,
     height: 80,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: '#f3f4f6',
     borderRadius: 8,
     marginRight: 12,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  truckName: { fontWeight: "700" },
-  truckDetail: { fontSize: 12, color: "#6b7280" },
+  truckName: { fontWeight: '700' },
+  truckDetail: { fontSize: 12, color: '#6b7280' },
 
   truckTags: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 8,
   },
   badge: {
-    backgroundColor: "#e6f7ff",
-    color: "#0088ff",
+    backgroundColor: '#e6f7ff',
+    color: '#0088ff',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     fontSize: 12,
   },
   badgeSuccess: {
-    backgroundColor: "#e6fff0",
-    color: "#00cc66",
-  }
+    backgroundColor: '#e6fff0',
+    color: '#00cc66',
+  },
 });

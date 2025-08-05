@@ -1,5 +1,11 @@
 import React, { useState, useCallback } from "react";
-import { View, ScrollView, StyleSheet, Text, RefreshControl } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  RefreshControl,
+} from "react-native";
 import StatusBarHeader from "../components/StatusBarHeader";
 import TruckOperation from "../components/TruckOperation";
 import TruckInfoScreen from "../components/TruckInfoScreen";
@@ -14,22 +20,14 @@ const HomeScreen = () => {
   const foodTruck = useAppStore((state) => state.foodTruck);
   const todaySales = useAppStore((state) => state.todaySales);
 
-  // 새로고침 함수
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-
-    // 여기서 데이터 다시 불러오는 작업 수행
-    // 예: API 호출해서 Zustand 상태 업데이트
     fetchNewData().finally(() => {
       setRefreshing(false);
     });
   }, []);
 
-  // 실제 API 호출 및 Zustand 상태 업데이트 함수 (예시)
   const fetchNewData = async () => {
-    // 예: apiService.getUserData() 같은 함수를 호출해서 상태 업데이트
-    // await apiService.fetchUserDataAndUpdateStore();
-    // 여기서는 1.5초 딜레이 후 끝내는 예시
     return new Promise((resolve) => setTimeout(resolve, 1500));
   };
 
@@ -67,8 +65,17 @@ const HomeScreen = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <StatusBarHeader />
-      <Text style={styles.welcomeText}>{user?.name}님, 환영합니다!</Text>
+      {/* 상단 상태바와 헤더 */}
+      {/* <StatusBarHeader /> */}
+
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageTitle}>길맛</Text>
+      </View>
+
+      <Text style={styles.welcomeText}>
+        {user?.name?.trim() || "사용자"}님, 환영합니다!
+      </Text>
+
       {renderContent()}
     </View>
   );
@@ -84,9 +91,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  welcomeText: {
+  pageHeader: {
+    backgroundColor: "#FF6B35",
+    paddingTop: 56,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+  },
+  pageTitle: {
     fontSize: 20,
     fontWeight: "bold",
+    color: "#fff",
+  },
+  welcomeText: {
+    fontSize: 16,
+    fontWeight: "600",
     margin: 16,
   },
 });
