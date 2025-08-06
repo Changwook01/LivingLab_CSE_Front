@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, ActivityIndicator, Platform, TouchableOpacity, 
 import MapView, { Marker, PROVIDER_GOOGLE, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.87:8080'; // ◀️ 본인 IP 주소로 수정!
+const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.152:8080'; // ◀️ 본인 IP 주소로 수정!
 
 const ZoneScreen = () => {
   const [region, setRegion] = useState(null);
@@ -18,6 +18,8 @@ const ZoneScreen = () => {
   const [isOperating, setIsOperating] = useState(false);
   const [isInOperatingZone, setIsInOperatingZone] = useState(false);
   const [truckId, setTruckId] = useState(7); // 임시 truckId, 나중에 실제 값으로 변경
+  const [isZoneListVisible, setIsZoneListVisible] = useState(true); // 목록 보임/숨김 상태
+  const [showNoZoneMessage, setShowNoZoneMessage] = useState(true); // 구역 없음 메시지 표시 상태
 
   useEffect(() => {
     (async () => {
@@ -147,6 +149,9 @@ const ZoneScreen = () => {
       const zonesData = [...data];
       setZones(zonesData);
       
+      // 새로운 데이터가 로드되면 메시지 표시 상태 초기화
+      setShowNoZoneMessage(true);
+      
       // 마커 데이터 로그 출력
       if (data.length > 0) {
         console.log('🗺️ 구역 데이터 확인:');
@@ -167,6 +172,7 @@ const ZoneScreen = () => {
       } else {
         console.log('⚠️ 구역 데이터가 없습니다.');
         setIsInOperatingZone(false);
+        setZones([]);
       }
 
     } catch (error) {
@@ -455,45 +461,80 @@ const ZoneScreen = () => {
 
       {/* 구역 목록 오버레이 */}
       {zones && zones.length > 0 && (
-        <View style={styles.zoneListOverlay}>
+        <View style={[styles.zoneListOverlay, !isZoneListVisible && styles.zoneListOverlayHidden]}>
           <View style={styles.zoneListHeader}>
             <Text style={styles.zoneListTitle}>주변 허가구역 목록</Text>
-            <Text style={styles.zoneListCount}>{zones.length}개 구역</Text>
-          </View>
-          <ScrollView style={styles.zoneListScroll} showsVerticalScrollIndicator={false}>
-            {zones.map((zone, index) => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.zoneListCount}>{zones.length}개 구역</Text>
               <TouchableOpacity
-                key={`list-${zone.id}`}
-                style={[
-                  styles.zoneListItem,
-                  selectedZone?.id === zone.id && styles.zoneListItemSelected
-                ]}
-                onPress={() => {
-                  setSelectedZone(zone);
-                  console.log(`📋 목록에서 구역 선택: ${zone.name}`);
-                }}
+                style={styles.zoneListToggleBtn}
+                onPress={() => setIsZoneListVisible((v) => !v)}
+                activeOpacity={0.7}
               >
-                <View style={styles.zoneListItemContent}>
-                  <Text style={styles.zoneListItemName}>{zone.name}</Text>
-                  <Text style={styles.zoneListItemAddress}>{zone.address}</Text>
-                  <View style={styles.zoneListItemMeta}>
-                    <Text style={styles.zoneListItemDistance}>
-                      📍 {calculateDistance(
-                        userLocation?.latitude || 0,
-                        userLocation?.longitude || 0,
-                        zone.latitude,
-                        zone.longitude
-                      ).toFixed(0)}m
-                    </Text>
-                    <Text style={styles.zoneListItemId}>ID: {zone.id}</Text>
-                  </View>
-                </View>
-                <View style={styles.zoneListItemArrow}>
-                  <Text style={styles.zoneListItemArrowText}>▶</Text>
-                </View>
+                <Text style={styles.zoneListToggleBtnText}>
+                  {isZoneListVisible ? '▼' : '▲'}
+                </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            </View>
+          </View>
+          {isZoneListVisible && (
+            <ScrollView style={styles.zoneListScroll} showsVerticalScrollIndicator={false}>
+              {zones.map((zone, index) => (
+                <TouchableOpacity
+                  key={`list-${zone.id}`}
+                  style={[
+                    styles.zoneListItem,
+                    selectedZone?.id === zone.id && styles.zoneListItemSelected
+                  ]}
+                  onPress={() => {
+                    setSelectedZone(zone);
+                    console.log(`📋 목록에서 구역 선택: ${zone.name}`);
+                  }}
+                >
+                  <View style={styles.zoneListItemContent}>
+                    <Text style={styles.zoneListItemName}>{zone.name}</Text>
+                    <Text style={styles.zoneListItemAddress}>{zone.address}</Text>
+                    <View style={styles.zoneListItemMeta}>
+                      <Text style={styles.zoneListItemDistance}>
+                        📍 {calculateDistance(
+                          userLocation?.latitude || 0,
+                          userLocation?.longitude || 0,
+                          zone.latitude,
+                          zone.longitude
+                        ).toFixed(0)}m
+                      </Text>
+                      <Text style={styles.zoneListItemId}>ID: {zone.id}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.zoneListItemArrow}>
+                    <Text style={styles.zoneListItemArrowText}>▶</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      )}
+
+      {/* 구역이 없을 때 메시지 오버레이 */}
+      {zones && zones.length === 0 && !loading && !isInitialLoad && showNoZoneMessage && (
+        <View style={styles.noZoneOverlay}>
+          {/* X 버튼 */}
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={() => {
+              console.log('❌ 구역 없음 메시지 닫기');
+              setShowNoZoneMessage(false);
+            }}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.noZoneContainer}>
+            <Text style={styles.noZoneIcon}>🗺️</Text>
+            <Text style={styles.noZoneTitle}>이 지역에 영업구역이 없습니다</Text>
+            <Text style={styles.noZoneSubtitle}>다른 지역을 확인해보세요</Text>
+          </View>
         </View>
       )}
 
@@ -696,6 +737,29 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     maxHeight: '50%',
+    zIndex: 10,
+  },
+  zoneListOverlayHidden: {
+    maxHeight: 40,
+    overflow: 'hidden',
+  },
+  zoneListToggleBtn: {
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#fff3e0',
+    borderWidth: 1,
+    borderColor: '#FF6B35',
+  },
+  zoneListToggleBtnText: {
+    fontSize: 22,
+    color: '#FF6B35',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 24,
   },
   zoneListHeader: {
     flexDirection: 'row',
@@ -770,6 +834,39 @@ const styles = StyleSheet.create({
   zoneListItemArrowText: {
     fontSize: 16,
     color: '#ccc',
+  },
+  noZoneOverlay: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  noZoneContainer: {
+    alignItems: 'center',
+  },
+  noZoneIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  noZoneTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  noZoneSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });
 

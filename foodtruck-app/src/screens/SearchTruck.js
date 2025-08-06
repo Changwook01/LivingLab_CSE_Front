@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, ActivityIndicator, Platform, TouchableOpacity, 
 import MapView, { Marker, PROVIDER_GOOGLE, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.87:8080';
+const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.152:8080';
 
 const SearchTruck = () => {
   const [region, setRegion] = useState(null);
@@ -15,6 +15,8 @@ const SearchTruck = () => {
   const [selectedTruck, setSelectedTruck] = useState(null);
   const [mapRegion, setMapRegion] = useState(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isTruckListVisible, setIsTruckListVisible] = useState(true); // 목록 보임/숨김 상태
+  const [showNoTruckMessage, setShowNoTruckMessage] = useState(true); // 트럭 없음 메시지 표시 상태
 
   useEffect(() => {
     (async () => {
@@ -76,7 +78,7 @@ const SearchTruck = () => {
         setMapRegion(currentUserLocation);
 
         // 초기 로드 시 자동 트럭 검색 비활성화
-        console.log('📍 현재 위치 설정 완료 - 수동 검색으로 트럭을 찾으세요');
+        console.log('📍 현재 위치 설정 완료 - 새로고침 버튼으로 트럭을 찾으세요');
         setIsInitialLoad(false);
         setLoading(false);
 
@@ -142,6 +144,9 @@ const SearchTruck = () => {
       const trucksData = [...data];
       setOperatingTrucks(trucksData);
       
+      // 새로운 데이터가 로드되면 메시지 표시 상태 초기화
+      setShowNoTruckMessage(true);
+      
       // 트럭 데이터 로그 출력
       if (data.length > 0) {
         console.log('🚚 영업 중인 트럭 데이터 확인:');
@@ -156,6 +161,7 @@ const SearchTruck = () => {
         }, 200);
       } else {
         console.log('⚠️ 영업 중인 트럭이 없습니다.');
+        setOperatingTrucks([]);
       }
 
     } catch (error) {
@@ -191,10 +197,10 @@ const SearchTruck = () => {
     console.log('🗺️ 지도 영역 변경:', newRegion);
   };
 
-  // 지도 영역 변경 완료 핸들러 (자동 새로고침 비활성화)
+  // 지도 영역 변경 완료 핸들러 (자동 트럭 검색 비활성화)
   const handleRegionChangeComplete = (newRegion) => {
-    // 자동 새로고침 비활성화 - 수동 새로고침만 사용
-    console.log('🗺️ 지도 영역 변경 완료 (자동 새로고침 비활성화)');
+    // 자동 트럭 검색 비활성화 - 수동 새로고침만 사용
+    console.log('🗺️ 지도 영역 변경 완료 (자동 트럭 검색 비활성화)');
   };
 
   // 두 지점 간의 거리 계산 (미터 단위)
@@ -247,6 +253,9 @@ const SearchTruck = () => {
             onPress={() => handleTruckPress(truck)}
             onCalloutPress={() => handleTruckCalloutPress(truck)}
           >
+            <View style={styles.truckMarker}>
+              <Text style={styles.truckMarkerIcon}>🚚</Text>
+            </View>
             <Callout tooltip>
               <View style={styles.calloutContainer}>
                 <Text style={styles.calloutTitle}>{truck.name}</Text>
@@ -294,45 +303,80 @@ const SearchTruck = () => {
 
       {/* 트럭 목록 오버레이 */}
       {operatingTrucks && operatingTrucks.length > 0 && (
-        <View style={styles.truckListOverlay}>
+        <View style={[styles.truckListOverlay, !isTruckListVisible && styles.truckListOverlayHidden]}>
           <View style={styles.truckListHeader}>
             <Text style={styles.truckListTitle}>영업 중인 푸드트럭</Text>
-            <Text style={styles.truckListCount}>{operatingTrucks.length}개 트럭</Text>
-          </View>
-          <ScrollView style={styles.truckListScroll} showsVerticalScrollIndicator={false}>
-            {operatingTrucks.map((truck, index) => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.truckListCount}>{operatingTrucks.length}개 트럭</Text>
               <TouchableOpacity
-                key={`list-${truck.id}`}
-                style={[
-                  styles.truckListItem,
-                  selectedTruck?.id === truck.id && styles.truckListItemSelected
-                ]}
-                onPress={() => {
-                  setSelectedTruck(truck);
-                  console.log(`📋 목록에서 트럭 선택: ${truck.name}`);
-                }}
+                style={styles.truckListToggleBtn}
+                onPress={() => setIsTruckListVisible((v) => !v)}
+                activeOpacity={0.7}
               >
-                <View style={styles.truckListItemContent}>
-                  <Text style={styles.truckListItemName}>{truck.name}</Text>
-                  <Text style={styles.truckListItemMenu}>{truck.menu || '메뉴 정보 없음'}</Text>
-                  <View style={styles.truckListItemMeta}>
-                    <Text style={styles.truckListItemDistance}>
-                      📍 {calculateDistance(
-                        userLocation?.latitude || 0,
-                        userLocation?.longitude || 0,
-                        truck.latitude,
-                        truck.longitude
-                      ).toFixed(0)}m
-                    </Text>
-                    <Text style={styles.truckListItemId}>ID: {truck.id}</Text>
-                  </View>
-                </View>
-                <View style={styles.truckListItemArrow}>
-                  <Text style={styles.truckListItemArrowText}>▶</Text>
-                </View>
+                <Text style={styles.truckListToggleBtnText}>
+                  {isTruckListVisible ? '▼' : '▲'}
+                </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            </View>
+          </View>
+          {isTruckListVisible && (
+            <ScrollView style={styles.truckListScroll} showsVerticalScrollIndicator={false}>
+              {operatingTrucks.map((truck, index) => (
+                <TouchableOpacity
+                  key={`list-${truck.id}`}
+                  style={[
+                    styles.truckListItem,
+                    selectedTruck?.id === truck.id && styles.truckListItemSelected
+                  ]}
+                  onPress={() => {
+                    setSelectedTruck(truck);
+                    console.log(`📋 목록에서 트럭 선택: ${truck.name}`);
+                  }}
+                >
+                  <View style={styles.truckListItemContent}>
+                    <Text style={styles.truckListItemName}>{truck.name}</Text>
+                    <Text style={styles.truckListItemMenu}>{truck.menu || '메뉴 정보 없음'}</Text>
+                    <View style={styles.truckListItemMeta}>
+                      <Text style={styles.truckListItemDistance}>
+                        📍 {calculateDistance(
+                          userLocation?.latitude || 0,
+                          userLocation?.longitude || 0,
+                          truck.latitude,
+                          truck.longitude
+                        ).toFixed(0)}m
+                      </Text>
+                      <Text style={styles.truckListItemId}>ID: {truck.id}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.truckListItemArrow}>
+                    <Text style={styles.truckListItemArrowText}>▶</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      )}
+
+      {/* 트럭이 없을 때 메시지 오버레이 */}
+      {operatingTrucks && operatingTrucks.length === 0 && !loading && !isInitialLoad && showNoTruckMessage && (
+        <View style={styles.noTruckOverlay}>
+          {/* X 버튼 */}
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={() => {
+              console.log('❌ 트럭 없음 메시지 닫기');
+              setShowNoTruckMessage(false);
+            }}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.noTruckContainer}>
+            <Text style={styles.noTruckIcon}>🚚</Text>
+            <Text style={styles.noTruckTitle}>이 지역에 영업중인 트럭이 없습니다</Text>
+            <Text style={styles.noTruckSubtitle}>다른 지역을 확인해보세요</Text>
+          </View>
         </View>
       )}
 
@@ -450,6 +494,29 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     maxHeight: '50%',
+    zIndex: 10,
+  },
+  truckListOverlayHidden: {
+    maxHeight: 40,
+    overflow: 'hidden',
+  },
+  truckListToggleBtn: {
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#fff3e0',
+    borderWidth: 1,
+    borderColor: '#FF6B35',
+  },
+  truckListToggleBtnText: {
+    fontSize: 22,
+    color: '#FF6B35',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 24,
   },
   truckListHeader: {
     flexDirection: 'row',
@@ -582,6 +649,55 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  truckMarker: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: '#FF6B35',
+  },
+  truckMarkerIcon: {
+    fontSize: 24,
+    textAlign: 'center',
+  },
+  noTruckOverlay: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  noTruckContainer: {
+    alignItems: 'center',
+  },
+  noTruckIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  noTruckTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  noTruckSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });
 
