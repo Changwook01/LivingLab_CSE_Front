@@ -15,52 +15,46 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userType, setUserType] = useState(null);
-  const { setLoginData, logout: clearStore } = useAppStore();
+  // ❗ 수정: 새로 만든 스토어 함수 가져오기
+  const { setUserData, setPartnerData, logout: clearStore } = useAppStore();
 
   const API_BASE_URL = Platform.OS === 'ios' 
     ? 'http://localhost:8080' 
     : 'http://10.0.2.2:8080';
 
+  // ❗ 수정된 login 함수
   const login = async (email, password) => {
     try {
       console.log('🔐 로그인 시도:', { email });
       
       const response = await fetch(`${API_BASE_URL}/api/users/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
 
       if (!response.ok) {
-        throw new Error('로그인에 실패했습니다.');
+        const errorBody = await response.text();
+        throw new Error(errorBody || '로그인에 실패했습니다.');
       }
 
-      const loginData = await response.json();
-      console.log('✅ 로그인 성공:', loginData);
+      const loginResponse = await response.json();
+      console.log('✅ 로그인 성공:', loginResponse);
 
-      // 사용자 정보 설정
-      const userData = {
-        id: loginData.userId,
-        email: email,
-        name: loginData.name,
-        role: loginData.role,
-        truckName: loginData.truckName || '길맛 푸드트럭'
-      };
+      const { user, partnerDetails } = loginResponse;
+
+      // 1. 기본 사용자 정보는 항상 저장
+      setUserData(user);
+      setUserType(user.role); // 사용자 타입 설정
+
+      // 2. 파트너 상세 정보가 있는 경우에만 추가로 저장
+      if (partnerDetails) {
+        setPartnerData(partnerDetails);
+      }
 
       setIsLoggedIn(true);
-      setLoginData(loginData);
-
-      // 오늘 매출 정보 가져오기 (파트너인 경우에만)
-      if (userType === 'partner') {
-        await fetchTodaySales();
-      }
-
       return true;
+
     } catch (error) {
       console.error('❌ 로그인 오류:', error);
       Alert.alert('로그인 실패', '이메일과 비밀번호를 확인해주세요.');
@@ -133,7 +127,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     signUp,
     setUserTypeAndNavigate,
-    fetchTodaySales,
+    // fetchTodaySales, // 제거
   };
 
   return (
