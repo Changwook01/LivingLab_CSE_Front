@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, ActivityIndicator, Platform, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
+import useMapStore from '../stores/useMapStore';
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.152:8080';
+const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.114:8080';
 
 const SearchTruck = () => {
   const [region, setRegion] = useState(null);
@@ -17,6 +18,10 @@ const SearchTruck = () => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isTruckListVisible, setIsTruckListVisible] = useState(true); // 목록 보임/숨김 상태
   const [showNoTruckMessage, setShowNoTruckMessage] = useState(true); // 트럭 없음 메시지 표시 상태
+  
+  // Zustand store 사용
+  const { targetLocation, clearTargetLocation } = useMapStore();
+  const mapRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -104,6 +109,15 @@ const SearchTruck = () => {
       }
     })();
   }, []);
+
+  // targetLocation이 변경될 때 지도 이동
+  useEffect(() => {
+    if (targetLocation && mapRef.current) {
+      console.log('🗺️ 지도 이동 실행:', targetLocation);
+      mapRef.current.animateToRegion(targetLocation, 1000);
+      clearTargetLocation();
+    }
+  }, [targetLocation, clearTargetLocation]);
 
   const fetchOperatingTrucks = async (latitude, longitude, latitudeDelta, longitudeDelta) => {
     setStatusMessage('현재 지도 영역의 영업 중인 트럭을 검색하는 중...');
@@ -235,6 +249,7 @@ const SearchTruck = () => {
   return (
     <View style={styles.container}>
       <MapView
+        ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={region}
@@ -331,6 +346,10 @@ const SearchTruck = () => {
                   onPress={() => {
                     setSelectedTruck(truck);
                     console.log(`📋 목록에서 트럭 선택: ${truck.name}`);
+                    
+                    // 해당 트럭 위치로 지도 이동
+                    const { moveToLocation } = useMapStore.getState();
+                    moveToLocation(truck.latitude, truck.longitude, 0.01, 0.01);
                   }}
                 >
                   <View style={styles.truckListItemContent}>

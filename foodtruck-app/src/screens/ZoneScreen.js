@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, ActivityIndicator, Platform, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
+import useMapStore from '../stores/useMapStore';
+import { useAppStore } from '../stores/useAppStore';
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.152:8080'; // ◀️ 본인 IP 주소로 수정!
+
+const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.114:8080'; // ◀️ 본인 IP 주소로 수정!
 
 const ZoneScreen = () => {
   const [region, setRegion] = useState(null);
@@ -12,14 +15,18 @@ const ZoneScreen = () => {
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState('위치 정보를 불러오는 중...');
   const [errorMsg, setErrorMsg] = useState(null);
-  const [selectedZone, setSelectedZone] = useState(null);
+  const [selectedZone, setSelectedZone] = useState(null); 
   const [mapRegion, setMapRegion] = useState(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isOperating, setIsOperating] = useState(false);
   const [isInOperatingZone, setIsInOperatingZone] = useState(false);
-  const [truckId, setTruckId] = useState(7); // 임시 truckId, 나중에 실제 값으로 변경
+  const truckId = useAppStore((state) => state.foodTruck?.id);
   const [isZoneListVisible, setIsZoneListVisible] = useState(true); // 목록 보임/숨김 상태
   const [showNoZoneMessage, setShowNoZoneMessage] = useState(true); // 구역 없음 메시지 표시 상태
+  
+  // Zustand store 사용
+  const { targetLocation, clearTargetLocation } = useMapStore();
+  const mapRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -107,6 +114,15 @@ const ZoneScreen = () => {
       }
     })();
   }, []);
+
+  // targetLocation이 변경될 때 지도 이동
+  useEffect(() => {
+    if (targetLocation && mapRef.current) {
+      console.log('🗺️ 지도 이동 실행:', targetLocation);
+      mapRef.current.animateToRegion(targetLocation, 1000);
+      clearTargetLocation();
+    }
+  }, [targetLocation, clearTargetLocation]);
 
   const fetchZonesInRegion = async (latitude, longitude, latitudeDelta, longitudeDelta) => {
     setStatusMessage('현재 지도 영역의 허가구역을 검색하는 중...');
@@ -345,6 +361,7 @@ const ZoneScreen = () => {
   return (
     <View style={styles.container}>
       <MapView
+        ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={region}
@@ -489,6 +506,10 @@ const ZoneScreen = () => {
                   onPress={() => {
                     setSelectedZone(zone);
                     console.log(`📋 목록에서 구역 선택: ${zone.name}`);
+                    
+                    // 해당 구역 위치로 지도 이동
+                    const { moveToLocation } = useMapStore.getState();
+                    moveToLocation(zone.latitude, zone.longitude, 0.01, 0.01);
                   }}
                 >
                   <View style={styles.zoneListItemContent}>
