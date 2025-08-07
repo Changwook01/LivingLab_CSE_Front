@@ -2,8 +2,23 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAppStore } from '../stores/useAppStore';
 
+// 값이 없거나 비어있을 때 대체 텍스트를 보여주는 도우미 함수
 const getDisplayText = (value, fallback = '정보 없음') =>
-  value?.trim?.() ? value : fallback;
+  value && String(value).trim() ? value : fallback;
+
+// ❗ 추가: 영업 상태를 한글로 변환하는 함수
+const getStatusText = (status) => {
+  switch (status) {
+    case 'OPERATING':
+      return '영업중';
+    case 'CLOSED':
+      return '영업종료';
+    case 'PREPARING':
+      return '준비중';
+    default:
+      return '정보 없음';
+  }
+};
 
 const TruckInfoScreen = () => {
   const foodTruck = useAppStore((state) => state.foodTruck);
@@ -19,13 +34,15 @@ const TruckInfoScreen = () => {
         <View style={styles.truckImage}>
           <Text style={{ fontSize: 28 }}>🚚</Text>
         </View>
-        <View>
+        <View style={styles.truckInfoContent}>
           <Text style={styles.truckName}>{getDisplayText(foodTruck?.name, '이름 없음')}</Text>
+          {/* ❗ 수정: description 필드를 사용 */}
           <Text style={styles.truckDetail}>
-            차량번호: {getDisplayText(foodTruck?.vehicleNumber)}
+            {getDisplayText(foodTruck?.description, '설명 없음')}
           </Text>
-          <Text style={styles.truckDetail}>
-            크기: {getDisplayText(foodTruck?.size)}
+          {/* ❗ 수정: status 필드를 사용하고, 한글로 변환 */}
+          <Text style={[styles.truckStatus, foodTruck?.status === 'OPERATING' && styles.statusOperating]}>
+            상태: {getStatusText(foodTruck?.status)}
           </Text>
         </View>
       </View>
@@ -43,51 +60,66 @@ export default TruckInfoScreen;
 const styles = StyleSheet.create({
   card: {
     backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginHorizontal: 12,
+    marginHorizontal: 16,
     marginVertical: 8,
     shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    paddingBottom: 8,
   },
-  cardTitle: { fontSize: 18, fontWeight: '700' },
-  cardEdit: { fontSize: 14, color: '#3b82f6' },
-
-  truckInfoRow: { flexDirection: 'row', marginBottom: 12 },
+  cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#1f2937' },
+  cardEdit: { fontSize: 14, color: '#3b82f6', fontWeight: '600' },
+  truckInfoRow: { flexDirection: 'row', alignItems: 'center' },
   truckImage: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
     backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    marginRight: 12,
+    borderRadius: 12,
+    marginRight: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  truckName: { fontWeight: '700' },
-  truckDetail: { fontSize: 12, color: '#6b7280' },
-
+  truckInfoContent: {
+    flex: 1,
+  },
+  truckName: { fontSize: 16, fontWeight: 'bold', color: '#111827', marginBottom: 4 },
+  truckDetail: { fontSize: 13, color: '#6b7280', marginBottom: 4 },
+  truckStatus: { fontSize: 13, color: '#6b7280' },
+  statusOperating: {
+    color: '#16a34a', // 영업중일 때 초록색
+    fontWeight: 'bold',
+  },
   truckTags: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
   },
   badge: {
-    backgroundColor: '#e6f7ff',
-    color: '#0088ff',
-    paddingHorizontal: 8,
+    backgroundColor: '#eef2ff',
+    color: '#4f46e5',
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     fontSize: 12,
+    fontWeight: '500',
+    marginRight: 8,
   },
   badgeSuccess: {
-    backgroundColor: '#e6fff0',
-    color: '#00cc66',
+    backgroundColor: '#dcfce7',
+    color: '#16a34a',
   },
 });
