@@ -14,7 +14,6 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userType, setUserType] = useState(null);
   const { setLoginData, logout: clearStore } = useAppStore();
 
   const API_BASE_URL = Platform.OS === 'ios' 
@@ -43,20 +42,11 @@ export const AuthProvider = ({ children }) => {
       const loginData = await response.json();
       console.log('✅ 로그인 성공:', loginData);
 
-      // 사용자 정보 설정
-      const userData = {
-        id: loginData.userId,
-        email: email,
-        name: loginData.name,
-        role: loginData.role,
-        truckName: loginData.truckName || '길맛 푸드트럭'
-      };
-
+      setLoginData(loginData); 
       setIsLoggedIn(true);
-      setLoginData(loginData);
 
       // 오늘 매출 정보 가져오기 (파트너인 경우에만)
-      if (userType === 'partner') {
+      if (loginData.user && loginData.user.role === 'OPERATOR') { // 백엔드에서 'OPERATOR'로 정의되어 있다고 가정
         await fetchTodaySales();
       }
 
@@ -81,7 +71,7 @@ export const AuthProvider = ({ children }) => {
           name: userData.name,
           email: userData.email,
           password: userData.password,
-          role: userType === 'partner' ? 'FOOD_TRUCK_OWNER' : 'CUSTOMER'
+          role: userData.role
         })
       });
 
@@ -104,35 +94,43 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setIsLoggedIn(false);
-    setUserType(null);
     clearStore();
-  };
-
-  const setUserTypeAndNavigate = (type) => {
-    setUserType(type);
   };
 
   const fetchTodaySales = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/today-sales`);
-      
+      // ✅ 현재 로그인된 사용자의 ID를 Zustand 스토어에서 가져와 사용합니다.
+      // user 객체가 존재하고 id 속성이 있다고 가정합니다.
+      if (!user || !user.id) {
+        console.warn('❌ 사용자 ID가 없어 매출 정보를 가져올 수 없습니다.');
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}/api/users/${user.id}/today-sales`); // ✅ 사용자 ID를 URL에 포함
+
       if (response.ok) {
         const salesData = await response.json();
         console.log('💰 오늘 매출 정보:', salesData);
-        setTodaySales(salesData);
+        // setTodaySales는 useAppStore에서 가져온 것이 아니므로,
+        // useAppStore에 setTodaySales 액션이 있다면 그것을 사용해야 합니다.
+        // 현재 useAppStore에는 setLoginData만 있으므로, setTodaySales 액션을 추가해야 합니다.
+        // 임시로 console.log로 대체하거나, useAppStore에 추가 후 사용하세요.
+        // setTodaySales(salesData); 
+        useAppStore.getState().setTodaySales(salesData); // ✅ 이렇게 호출해야 합니다.
+      } else {
+        const errorData = await response.json();
+        console.error('❌ 매출 정보 가져오기 오류:', errorData.message);
       }
     } catch (error) {
       console.error('❌ 매출 정보 가져오기 오류:', error);
+      Alert.alert('오류', '매출 정보를 가져오지 못했습니다.');
     }
   };
 
   const value = {
     isLoggedIn,
-    userType,
     login,
     logout,
     signUp,
-    setUserTypeAndNavigate,
     fetchTodaySales,
   };
 

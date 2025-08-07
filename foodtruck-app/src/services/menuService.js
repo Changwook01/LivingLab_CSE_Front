@@ -59,6 +59,19 @@ export const menuService = {
     if (foodTruckId !== undefined && foodTruckId !== null) {
       axios.get(`/api/menus?foodTruckId=${foodTruckId}`);
     }
+
+    axios.post("/api/login", credentials)
+  .then(res => {
+    const { user, foodTruck, menus, todaySales } = res.data;
+
+    console.log("✅ 로그인 성공 - user:", user);
+
+    // 여기서 user만 넘겨도 되고, 필요한 거 더 넘길 수도 있음
+    handleLoginSuccess(user, "customer");
+  })
+  .catch(err => {
+    console.error("Login error:", err);
+  });
     
     return await response.json();
   },

@@ -14,6 +14,8 @@ export const useAppStore = create((set) => ({
       todaySales: data.todaySales,
     }),
 
+    setTodaySales: (salesData) => set({ todaySales: salesData }),
+    
   logout: () =>
     set({ user: null, foodTruck: null, menus: [], todaySales: null }),
 }));

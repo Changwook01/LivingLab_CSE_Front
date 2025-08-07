@@ -4,92 +4,125 @@ import HomeScreen from "./src/screens/HomeScreen";
 import MenuScreen from "./src/screens/MenuScreen";
 import ZoneScreen from "./src/screens/ZoneScreen";
 import MyPageScreen from "./src/screens/MyPageScreen";
-import { StartScreen, CustomerAppNavigator } from "./src/screens/StartScreen";
-import { AuthProvider } from "./src/context/AuthContext";
+import { StartScreen } from "./src/screens/StartScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import SignupScreen from "./src/screens/SignupScreen";
 import BusinessSignupScreen from "./src/screens/BusinessSignupScreen";
+import MainScreen from "./src/screens/MainScreen";
+import SubscriptionScreen from "./src/screens/SubscriptionScreen";
+import { useAppStore } from "./src/stores/useAppStore"; 
+import { AuthProvider } from "./src/context/AuthContext";
 
 export default function App() {
-  const [isStarted, setIsStarted] = useState(false);
-  const [selectedTab, setSelectedTab] = useState("home");
-  const [userData, setUserData] = useState(null);
-  const [userType, setUserType] = useState(null);
   const [currentScreen, setCurrentScreen] = useState("start");
-  
-  const handleStart = (loginData, type) => {
-    setUserData(loginData);
-    setUserType(type);
-    setIsStarted(true);
-    setCurrentScreen("main"); // 로그인 성공 시 화면 상태를 main으로 변경
-  };
+  const [selectedTab, setSelectedTab] = useState("home");
 
+  const { user } = useAppStore();
+
+  const handleAuthSuccess = () => {
+    setCurrentScreen("main");
+  };
+  
   const renderScreen = () => {
     switch (selectedTab) {
       case "home":
-        return <HomeScreen userData={userData} />;
+        return <HomeScreen user={user} />;
       case "menu":
         return <MenuScreen />;
       case "zone":
         return <ZoneScreen />;
       case "mypage":
         return <MyPageScreen />;
+      case "SubscriptionScreen":
+        return <SubscriptionScreen />;
       default:
-        return <HomeScreen userData={userData} />;
+        return <HomeScreen user={user} />;
     }
   };
 
-  const tabs = [
-    { id: "home", icon: "🏠", label: "홈" },
-    { id: "menu", icon: "🍔", label: "메뉴" },
-    { id: "zone", icon: "📍", label: "영업지역" },
-    { id: "mypage", icon: "👤", label: "마이페이지" },
-  ];
+  const renderTabs = () => {
+    const isCitizen = user?.role === "CITIZEN";
+
+    const tabs = isCitizen
+      ? [
+          { id: "home", icon: "🏠", label: "홈" },
+          { id: "SubscriptionScreen", icon: "📥", label: "구독" },
+          { id: "mypage", icon: "👤", label: "마이페이지" },
+        ]
+      : [
+          { id: "home", icon: "🏠", label: "홈" },
+          { id: "menu", icon: "🍔", label: "메뉴" },
+          { id: "zone", icon: "📍", label: "영업지역" },
+          { id: "mypage", icon: "👤", label: "마이페이지" },
+        ];
+
+    return (
+      <View style={styles.tabBar}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.id}
+            style={styles.tabItem}
+            onPress={() => setSelectedTab(tab.id)}
+          >
+            <Text style={{ fontSize: 24 }}>{tab.icon}</Text>
+            <Text
+              style={[
+                styles.tabLabel,
+                selectedTab === tab.id && styles.tabLabelActive,
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const renderMainContent = () => {
+    const isCitizen = user?.role === "CITIZEN";
+
+    if (isCitizen) {
+      return <MainScreen user={user} />;
+    } else {
+      return (
+        <View style={styles.container}>
+          <View style={styles.screen}>{renderScreen()}</View>
+          {renderTabs()}
+        </View>
+      );
+    }
+  };
 
   return (
-    <AuthProvider>
-    {currentScreen === "start" && (
-      <StartScreen onStart={handleStart} onSignup={() => setCurrentScreen("signup")} />
-    )}
-    {currentScreen === "signup" && (
-      <SignupScreen
-        onBusinessSignup={() => setCurrentScreen("businessSignup")}
-        onBack={() => setCurrentScreen("start")}
-      />
-    )}
-    {currentScreen === "businessSignup" && (
-      <BusinessSignupScreen onBack={() => setCurrentScreen("signup")} />
-    )}
-    {currentScreen === "main" && userType === "customer" && (
-      <CustomerAppNavigator userData={userData} />
-    )}
-    {currentScreen === "main" && userType !== "customer" && (
-      <View style={styles.container}>
-        <View style={styles.screen}>{renderScreen()}</View>
-        <View style={styles.tabBar}>
-          {tabs.map((tab) => (
-            <TouchableOpacity
-              key={tab.id}
-              style={styles.tabItem}
-              onPress={() => setSelectedTab(tab.id)}
-            >
-              <Text style={{ fontSize: 24 }}>{tab.icon}</Text>
-              <Text
-                style={[
-                  styles.tabLabel,
-                  selectedTab === tab.id && styles.tabLabelActive,
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    )}
-  </AuthProvider>
+    <AuthProvider> 
+      {currentScreen === "start" && (
+        <StartScreen
+          // onStart는 로그인 버튼이 아닌, 앱 시작 시 호출되는 함수이므로 수정이 필요합니다.
+          // onLogin 함수를 추가하여 LoginScreen으로 이동하도록 변경합니다.
+          onLogin={() => setCurrentScreen("login")} 
+          onSignup={() => setCurrentScreen("signup")}
+          onAuthSuccess={handleAuthSuccess}
+        />
+      )}
+      {currentScreen === "signup" && (
+        <SignupScreen
+          onBusinessSignup={() => setCurrentScreen("businessSignup")}
+          onBack={() => setCurrentScreen("start")}
+        />
+      )}
+      {currentScreen === "businessSignup" && (
+        <BusinessSignupScreen onBack={() => setCurrentScreen("signup")} />
+      )}
+      {/* 🔑 LoginScreen 추가 및 onLoginSuccess 핸들러 정의 */}
+      {currentScreen === "login" && (
+       <LoginScreen onLoginSuccess={handleAuthSuccess} onBack={() => setCurrentScreen("start")} />
+      )}
+      {currentScreen === "main" && renderMainContent()}
+      </AuthProvider> 
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
