@@ -20,9 +20,9 @@ export const AuthProvider = ({ children }) => {
     ? 'http://localhost:8080' 
     : 'http://10.0.2.2:8080';
 
-  const login = async (email, password) => {
+  const login = async (email, password, expectedRole) => {
     try {
-      console.log('🔐 로그인 시도:', { email });
+      console.log('🔐 로그인 시도:', { email, expectedRole });
       
       const response = await fetch(`${API_BASE_URL}/api/users/login`, {
         method: 'POST',
@@ -31,7 +31,8 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify({
           email: email,
-          password: password
+          password: password,
+          role: expectedRole // 백엔드에서 role 검증을 위해 전달
         })
       });
 
@@ -42,15 +43,27 @@ export const AuthProvider = ({ children }) => {
       const loginData = await response.json();
       console.log('✅ 로그인 성공:', loginData);
 
-      setLoginData(loginData); 
-      setIsLoggedIn(true);
-
-      // 오늘 매출 정보 가져오기 (파트너인 경우에만)
-      if (loginData.user && loginData.user.role === 'OPERATOR') { // 백엔드에서 'OPERATOR'로 정의되어 있다고 가정
-        await fetchTodaySales();
+      // 응답에서 받은 사용자 역할이 expectedRole과 일치하는지 확인
+      if (loginData.user?.role !== expectedRole) {
+        throw new Error('선택하신 사용자 유형과 계정 정보가 일치하지 않습니다.');
       }
 
-      return true;
+      // 사업자인 경우 partnerDetails의 데이터를 적절히 매핑
+      if (loginData.user.role === 'OPERATOR' && loginData.partnerDetails) {
+        const mappedData = {
+          user: loginData.user,
+          foodTruck: loginData.partnerDetails.foodTruck,
+          menus: loginData.partnerDetails.menus,
+          todaySales: loginData.partnerDetails.todaySales
+        };
+        setLoginData(mappedData);
+      } else {
+        // 일반 사용자인 경우
+        setLoginData({ user: loginData.user });
+      }
+      
+      setIsLoggedIn(true);
+      return loginData;
     } catch (error) {
       console.error('❌ 로그인 오류:', error);
       Alert.alert('로그인 실패', '이메일과 비밀번호를 확인해주세요.');
@@ -99,13 +112,14 @@ export const AuthProvider = ({ children }) => {
 
   const fetchTodaySales = async () => {
     try {
-      // ✅ 현재 로그인된 사용자의 ID를 Zustand 스토어에서 가져와 사용합니다.
-      // user 객체가 존재하고 id 속성이 있다고 가정합니다.
-      if (!user || !user.id) {
+      // Zustand 스토어에서 현재 로그인된 사용자 정보를 가져옵니다
+      const { user } = useAppStore.getState();
+      
+      if (!user?.id) {
         console.warn('❌ 사용자 ID가 없어 매출 정보를 가져올 수 없습니다.');
         return;
       }
-      const response = await fetch(`${API_BASE_URL}/api/users/${user.id}/today-sales`); // ✅ 사용자 ID를 URL에 포함
+      const response = await fetch(`${API_BASE_URL}/api/users/${user.id}/today-sales`); // 사용자 ID를 URL에 포함
 
       if (response.ok) {
         const salesData = await response.json();

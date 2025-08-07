@@ -18,29 +18,45 @@ const LoginScreen = ({ userType, onLoginSuccess, onBack }) => {
 
   const setLoginData = useAppStore((state) => state.setLoginData); // ✅ store setter 가져오기
 
-  const handleLogin = async () => {
+    const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("오류", "이메일과 비밀번호를 모두 입력해주세요.");
       return;
     }
 
     try {
-        // ✅ useAuth().login() 함수가 로그인 성공 시 백엔드에서 받은 데이터를 반환한다고 가정합니다.
-        // 이 데이터는 LoginDTO 형태여야 하며, user 객체와 그 안에 role이 포함되어야 합니다.
-        const loginResponseData = await login(email, password); 
-
-        if (loginResponseData) {
-          setLoginData(loginResponseData); 
-          onLoginSuccess?.(); // 로그인 성공 콜백 호출
+        // userType에 따라 role 설정
+        const expectedRole = userType === 'customer' ? 'CITIZEN' : 'OPERATOR';
+        console.log('로그인 시도:', { userType, expectedRole });
+        
+        // 로그인 시도
+        const loginResponseData = await login(email, password, expectedRole);
+        
+        // 로그인 성공 시 데이터 매핑
+        if (expectedRole === 'OPERATOR' && loginResponseData.partnerDetails) {
+          // 사업자인 경우 partnerDetails의 데이터를 매핑
+          const mappedData = {
+            user: loginResponseData.user,
+            foodTruck: loginResponseData.partnerDetails.foodTruck,
+            menus: loginResponseData.partnerDetails.menus,
+            todaySales: loginResponseData.partnerDetails.todaySales
+          };
+          setLoginData(mappedData);
         } else {
-            // login 함수가 성공했지만 데이터가 없는 경우 (예외 처리)
-            Alert.alert("로그인 실패", "로그인 정보를 가져오는데 실패했습니다.");
+          // 일반 사용자인 경우
+          setLoginData({ user: loginResponseData.user });
         }
+        
+        console.log('로그인 성공:', { 
+          userType, 
+          role: loginResponseData.user?.role,
+          hasFoodTruck: !!loginResponseData.partnerDetails?.foodTruck
+        });
+        onLoginSuccess?.(); // 로그인 성공 콜백 호출
     } catch (error) {
-      console.error('Login error:', error);
-      // 에러 메시지를 사용자에게 더 명확하게 보여줍니다.
-      const errorMessage = error.response?.data?.message || "이메일 또는 비밀번호를 확인해주세요.";
-      Alert.alert("로그인 실패", errorMessage);
+        console.error('Login error:', error);
+        const errorMessage = error.message || "이메일 또는 비밀번호를 확인해주세요.";
+        Alert.alert("로그인 실패", errorMessage);
     }
   };
 

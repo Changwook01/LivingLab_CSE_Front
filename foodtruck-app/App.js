@@ -80,17 +80,32 @@ export default function App() {
   };
 
   const renderMainContent = () => {
+    // 사용자 역할 확인
     const isCitizen = user?.role === "CITIZEN";
+    const isOperator = user?.role === "OPERATOR";
 
     if (isCitizen) {
-      return <MainScreen user={user} />;
-    } else {
+      // 일반 사용자 화면
+      return (
+        <View style={styles.container}>
+          <View style={styles.screen}>
+            <MainScreen user={user} />
+          </View>
+          {renderTabs()}
+        </View>
+      );
+    } else if (isOperator) {
+      // 사업자 화면
       return (
         <View style={styles.container}>
           <View style={styles.screen}>{renderScreen()}</View>
           {renderTabs()}
         </View>
       );
+    } else {
+      // 역할이 없는 경우 시작 화면으로 리다이렉트
+      setCurrentScreen("start");
+      return null;
     }
   };
 
