@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import { React, useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -12,19 +11,78 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import StatusBarHeader from '../components/StatusBarHeader';
-import { useAppStore } from '../stores/useAppStore';
-
+import { menuService } from '../services/menuService';
+import EditMenuModal from '../components/EditMenuModal';
+import AddMenuModal from '../components/AddMenuModal'; 
 // 메뉴 화면
 const MenuScreen = () => {
-  const menuData = useAppStore((state) => state.menus);  // ✅ 메뉴 데이터를 zustand에서 가져옴
   const [activeCategory, setActiveCategory] = useState('전체');
+  const [menuData, setMenuData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingMenu, setEditingMenu] = useState(null);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [newMenu, setNewMenu] = useState({
+    name: '',
+    price: '',
+    category: '',
+    imageUrl: '',
+    available: true,
+  });
+
+  useEffect(() => {
+    const fetchMenus = async () => {
+      try {
+        const data = await menuService.getAllMenus();  // ← 여기 수정
+        setMenuData(data);
+      } catch (error) {
+        console.error('메뉴 불러오기 실패:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    fetchMenus();
+  }, []);
+    
+  const handleSave = async (updatedMenu) => {
+    console.log('📦 업데이트할 메뉴:', updatedMenu); // 🔍 확인용
+    try {
+      await menuService.updateMenu(updatedMenu.id, updatedMenu);
+      const newMenuData = menuData.map(menu =>
+        menu.id === updatedMenu.id ? updatedMenu : menu
+      );
+      setMenuData(newMenuData);
+      setIsEditModalVisible(false);
+    } catch (error) {
+      console.error('메뉴 수정 실패:', error);
+    }
+  };
+  const handleEdit = (menu) => {
+    setEditingMenu(menu);
+    setIsEditModalVisible(true);
+  };
+
+  const handleAddMenu = async () => {
+    try {
+      const added = await menuService.addMenu(newMenu);
+      setMenuData([...menuData, added]);
+      setIsAddModalVisible(false);
+      setNewMenu({ name: '', price: '', category: '', imageUrl: '', available: true });
+    } catch (error) {
+      console.error('메뉴 추가 실패:', error);
+      Alert.alert('에러', '메뉴 추가 중 문제가 발생했습니다.');
+    }
+  };
 
   // 카테고리 목록 생성
   const categories = ['전체', ...new Set(menuData.map(menu => menu.category))];
+  
+  // 선택된 카테고리에 따른 메뉴 필터링
   const filteredMenus = activeCategory === '전체' 
     ? menuData 
     : menuData.filter(menu => menu.category === activeCategory);
-    
+
   // 카테고리별 메뉴 개수
   const getCategoryCount = (category) => {
     if (category === '전체') return menuData.length;
@@ -62,7 +120,13 @@ const MenuScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
+      <AddMenuModal
+        visible={isAddModalVisible}
+        onClose={() => setIsAddModalVisible(false)}
+        onSave={handleAddMenu}
+        newMenu={newMenu}
+        setNewMenu={setNewMenu}
+      />
       <StatusBarHeader />
 
       {/* 통계 카드 */}
@@ -136,6 +200,7 @@ const MenuScreen = () => {
               menu={menu}
               onToggleAvailability={toggleMenuAvailability}
               onDelete={deleteMenu}
+              onEdit={handleEdit}
             />
           ))
         ) : (
@@ -158,12 +223,23 @@ const MenuScreen = () => {
         )}
 
     <View style={styles.menuHeader}>
-            <TouchableOpacity style={styles.addMenuHeaderButton}>
-              <Icon name="plus" size={16} color="#FF6B35" />
-              <Text style={styles.addMenuHeaderText}>메뉴 추가</Text>
-            </TouchableOpacity>
+    <TouchableOpacity
+  style={styles.addMenuHeaderButton}
+  onPress={() => setIsAddModalVisible(true)}
+>
+  <Icon name="plus" size={16} color="#FF6B35" />
+  <Text style={styles.addMenuHeaderText}>메뉴 추가</Text>
+</TouchableOpacity>
           </View>
       </ScrollView>
+
+      <EditMenuModal
+  visible={isEditModalVisible}
+  menu={editingMenu}
+  onClose={() => setIsEditModalVisible(false)}
+  onSave={handleSave}
+/>
+
     </SafeAreaView>
 
     
@@ -171,7 +247,7 @@ const MenuScreen = () => {
 };
 
 // 메뉴 아이템 카드 컴포넌트
-const MenuItemCard = ({ menu, onToggleAvailability, onDelete }) => {
+const MenuItemCard = ({ menu, onToggleAvailability, onDelete, onEdit }) => {
   const [showOptions, setShowOptions] = useState(false);
 
   const handleMorePress = () => {
@@ -180,7 +256,7 @@ const MenuItemCard = ({ menu, onToggleAvailability, onDelete }) => {
       "어떤 작업을 하시겠습니까?",
       [
         { text: "취소", style: "cancel" },
-        { text: "수정", onPress: () => console.log('Edit menu') },
+        { text: "수정", onPress: () => onEdit(menu) },
         { 
           text: "삭제", 
           style: "destructive",
@@ -234,7 +310,7 @@ const MenuItemCard = ({ menu, onToggleAvailability, onDelete }) => {
           <View style={styles.menuActions}>
             <TouchableOpacity 
               style={styles.editButton}
-              onPress={() => console.log('Edit menu', menu.id)}
+              onPress={() => onEdit(menu)}
             >
               <Icon name="pencil" size={14} color="#666" />
               <Text style={styles.editButtonText}>수정</Text>
