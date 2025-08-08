@@ -11,7 +11,7 @@ import StatusBarHeader from '../components/StatusBarHeader';
 import { useAuth } from '../context/AuthContext';
 import { useAppStore } from "../stores/useAppStore";   // ✅ Zustand 가져오기
 
-const LoginScreen = ({ userType, onLoginSuccess, onBack }) => {
+const LoginScreen = ({ userType= "customer", onSuccess, onBack }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useAuth();
@@ -24,7 +24,7 @@ const LoginScreen = ({ userType, onLoginSuccess, onBack }) => {
     if (!res) return;                                        // 실패 시 종료(알림은 내부에서 처리됨)
     onSuccess?.();                                           // ✅ 성공 후 탭 초기화 등
   };
-  
+
   const handleLogin = async () => {
     try {
       const expectedRole = userType === "customer" ? "CITIZEN" : "OPERATOR";
@@ -50,7 +50,7 @@ const LoginScreen = ({ userType, onLoginSuccess, onBack }) => {
       });
   
       // 화면 전환
-      onLoginSuccess?.();  
+      onSuccess?.();  
     } catch (error) {
       console.error("Login error:", error);
       Alert.alert("로그인 실패", error.message || "이메일 또는 비밀번호를 확인해주세요.");
