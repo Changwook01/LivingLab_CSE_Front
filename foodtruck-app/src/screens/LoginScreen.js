@@ -16,47 +16,44 @@ const LoginScreen = ({ userType, onLoginSuccess, onBack }) => {
   const [password, setPassword] = useState("");
   const { login } = useAuth();
 
-  const setLoginData = useAppStore((state) => state.setLoginData); // ✅ store setter 가져오기
+  const { setLoginData } = useAppStore.getState();
 
-    const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("오류", "이메일과 비밀번호를 모두 입력해주세요.");
-      return;
-    }
-
+  const handleSubmit = async () => {
+    const expectedRole = userType === "customer" ? "CITIZEN" : "OPERATOR";
+    const res = await login(email, password, expectedRole);  // ✅ 서버 호출 + setLoginData 내부에서 수행
+    if (!res) return;                                        // 실패 시 종료(알림은 내부에서 처리됨)
+    onSuccess?.();                                           // ✅ 성공 후 탭 초기화 등
+  };
+  
+  const handleLogin = async () => {
     try {
-        // userType에 따라 role 설정
-        const expectedRole = userType === 'customer' ? 'CITIZEN' : 'OPERATOR';
-        console.log('로그인 시도:', { userType, expectedRole });
-        
-        // 로그인 시도
-        const loginResponseData = await login(email, password, expectedRole);
-        
-        // 로그인 성공 시 데이터 매핑
-        if (expectedRole === 'OPERATOR' && loginResponseData.partnerDetails) {
-          // 사업자인 경우 partnerDetails의 데이터를 매핑
-          const mappedData = {
-            user: loginResponseData.user,
-            foodTruck: loginResponseData.partnerDetails.foodTruck,
-            menus: loginResponseData.partnerDetails.menus,
-            todaySales: loginResponseData.partnerDetails.todaySales
-          };
-          setLoginData(mappedData);
-        } else {
-          // 일반 사용자인 경우
-          setLoginData({ user: loginResponseData.user });
-        }
-        
-        console.log('로그인 성공:', { 
-          userType, 
-          role: loginResponseData.user?.role,
-          hasFoodTruck: !!loginResponseData.partnerDetails?.foodTruck
-        });
-        onLoginSuccess?.(); // 로그인 성공 콜백 호출
+      const expectedRole = userType === "customer" ? "CITIZEN" : "OPERATOR";
+      console.log("로그인 시도:", { userType, expectedRole });
+  
+      const loginResponseData = await login(email, password, expectedRole);
+  
+      if (!loginResponseData) {
+        return;
+      }
+  
+      // Zustand에 바로 저장
+      setLoginData({
+        user: loginResponseData.user,
+        foodTruck: loginResponseData.partnerDetails?.foodTruck ?? null,
+        menus: loginResponseData.partnerDetails?.menus ?? [],
+        todaySales: loginResponseData.partnerDetails?.todaySales ?? null,
+      });
+  
+      console.log("로그인 성공:", {
+        role: loginResponseData.user?.role,
+        hasFoodTruck: !!loginResponseData.partnerDetails?.foodTruck,
+      });
+  
+      // 화면 전환
+      onLoginSuccess?.();  
     } catch (error) {
-        console.error('Login error:', error);
-        const errorMessage = error.message || "이메일 또는 비밀번호를 확인해주세요.";
-        Alert.alert("로그인 실패", errorMessage);
+      console.error("Login error:", error);
+      Alert.alert("로그인 실패", error.message || "이메일 또는 비밀번호를 확인해주세요.");
     }
   };
 

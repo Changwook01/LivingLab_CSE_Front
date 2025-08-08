@@ -12,41 +12,88 @@ import MainScreen from "./src/screens/MainScreen";
 import SubscriptionScreen from "./src/screens/SubscriptionScreen";
 import { useAppStore } from "./src/stores/useAppStore"; 
 import { AuthProvider } from "./src/context/AuthContext";
+import UserMyPage from "./src/screens/UserMyPage";
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState("start");
+  const [authScreen, setAuthScreen] = useState("start");   // 로그인 전 스택
   const [selectedTab, setSelectedTab] = useState("home");
 
   const { user } = useAppStore();
 
   const handleAuthSuccess = () => {
-    setCurrentScreen("main");
+    setAuthScreen(null); // 로그인 화면 닫기
   };
   
-  const renderScreen = () => {
-    switch (selectedTab) {
-      case "home":
-        return <HomeScreen user={user} />;
-      case "menu":
-        return <MenuScreen />;
-      case "zone":
-        return <ZoneScreen />;
-      case "mypage":
-        return <MyPageScreen />;
-      case "SubscriptionScreen":
-        return <SubscriptionScreen />;
+  const renderAuth = () => {
+    switch (authScreen) {
+      case "login":
+        return (
+          <LoginScreen
+            onSuccess={() => setSelectedTab("home")}
+            onBack={() => setAuthScreen("start")}
+          />
+        );
+      case "signup":
+        return (
+          <SignupScreen
+            onSuccess={() => setAuthScreen("login")}
+            onBack={() => setAuthScreen("start")}
+          />
+        );
+      case "bizSignup":
+        return (
+          <BusinessSignupScreen
+            onSuccess={() => setAuthScreen("login")}
+            onBack={() => setAuthScreen("start")}
+          />
+        );
+      case "start":
       default:
-        return <HomeScreen user={user} />;
+        return (
+          <StartScreen
+            onLogin={() => setAuthScreen("login")}
+            onSignup={() => setAuthScreen("signup")}
+          />
+        );
+    }
+  };
+  const renderMainContent = () => {
+    const role = user?.role ?? "CITIZEN";
+
+    if (role === "CITIZEN") {
+      switch (selectedTab) {
+        case "home":
+          return <MainScreen user={user} />;
+        case "subscription":
+          return <SubscriptionScreen user={user} />;
+        case "mypage":
+          return <UserMyPage user={user} />;
+        default:
+          return <MainScreen user={user} />;
+      }
+    } else {
+      // OPERATOR
+      switch (selectedTab) {
+        case "home":
+          return <HomeScreen user={user} />;
+        case "menu":
+          return <MenuScreen user={user} />;
+        case "zone":
+          return <ZoneScreen user={user} />;
+        case "mypage":
+          return <MyPageScreen user={user} />;
+        default:
+          return <HomeScreen user={user} />;
+      }
     }
   };
 
   const renderTabs = () => {
     const isCitizen = user?.role === "CITIZEN";
-
     const tabs = isCitizen
       ? [
           { id: "home", icon: "🏠", label: "홈" },
-          { id: "SubscriptionScreen", icon: "📥", label: "구독" },
+          { id: "subscription", icon: "📥", label: "구독" }, // ✅ key 문자열 통일
           { id: "mypage", icon: "👤", label: "마이페이지" },
         ]
       : [
@@ -68,7 +115,7 @@ export default function App() {
             <Text
               style={[
                 styles.tabLabel,
-                selectedTab === tab.id && styles.tabLabelActive,
+                selectedTab === (tab.id) && styles.tabLabelActive,
               ]}
             >
               {tab.label}
@@ -79,64 +126,21 @@ export default function App() {
     );
   };
 
-  const renderMainContent = () => {
-    // 사용자 역할 확인
-    const isCitizen = user?.role === "CITIZEN";
-    const isOperator = user?.role === "OPERATOR";
-
-    if (isCitizen) {
-      // 일반 사용자 화면
-      return (
-        <View style={styles.container}>
-          <View style={styles.screen}>
-            <MainScreen user={user} />
-          </View>
-          {renderTabs()}
-        </View>
-      );
-    } else if (isOperator) {
-      // 사업자 화면
-      return (
-        <View style={styles.container}>
-          <View style={styles.screen}>{renderScreen()}</View>
-          {renderTabs()}
-        </View>
-      );
-    } else {
-      // 역할이 없는 경우 시작 화면으로 리다이렉트
-      setCurrentScreen("start");
-      return null;
-    }
-  };
-
   return (
-    <AuthProvider> 
-      {currentScreen === "start" && (
-        <StartScreen
-          // onStart는 로그인 버튼이 아닌, 앱 시작 시 호출되는 함수이므로 수정이 필요합니다.
-          // onLogin 함수를 추가하여 LoginScreen으로 이동하도록 변경합니다.
-          onLogin={() => setCurrentScreen("login")} 
-          onSignup={() => setCurrentScreen("signup")}
-          onAuthSuccess={handleAuthSuccess}
-        />
+    <AuthProvider>
+      {!user ? (
+        renderAuth() // 로그인 전
+      ) : (
+        // 로그인 후: 컨텐츠 + 탭바
+        <View style={styles.container}>
+          <View style={styles.screen}>{renderMainContent()}</View>
+          {renderTabs()}
+        </View>
       )}
-      {currentScreen === "signup" && (
-        <SignupScreen
-          onBusinessSignup={() => setCurrentScreen("businessSignup")}
-          onBack={() => setCurrentScreen("start")}
-        />
-      )}
-      {currentScreen === "businessSignup" && (
-        <BusinessSignupScreen onBack={() => setCurrentScreen("signup")} />
-      )}
-      {/* 🔑 LoginScreen 추가 및 onLoginSuccess 핸들러 정의 */}
-      {currentScreen === "login" && (
-       <LoginScreen onLoginSuccess={handleAuthSuccess} onBack={() => setCurrentScreen("start")} />
-      )}
-      {currentScreen === "main" && renderMainContent()}
-      </AuthProvider> 
+    </AuthProvider>
   );
 }
+
 
 
 const styles = StyleSheet.create({

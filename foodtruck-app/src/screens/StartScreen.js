@@ -11,7 +11,7 @@ import StatusBarHeader from '../components/StatusBarHeader';
 import LoginScreen from './LoginScreen';
 
 // 🚀 시작 화면
-const StartScreen = ({ onLogin, onSignup, onAuthSuccess }) => {
+const StartScreen = ({ onLogin, onSignup }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [selectedUserType, setSelectedUserType] = useState(null);
 
@@ -23,7 +23,7 @@ const StartScreen = ({ onLogin, onSignup, onAuthSuccess }) => {
   const handleLoginSuccess = () => {
     setShowLogin(false);
     // ✅ App.js에서 전달받은 onAuthSuccess를 호출하여 화면 전환을 트리거
-    onAuthSuccess(); 
+    onAuthSuccess?.(); 
   };
 
   const handleBackToStart = () => {

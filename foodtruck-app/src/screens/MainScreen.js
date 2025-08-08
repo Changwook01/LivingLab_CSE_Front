@@ -38,6 +38,7 @@ export default function MainScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
       {/* 검색/필터 */}
       <View style={styles.searchBox}>
         <View style={styles.inputContainer}>
@@ -48,21 +49,22 @@ export default function MainScreen() {
           <Icon name="filter" size={16} color="#fff" />
         </TouchableOpacity>
       </View>
+
       {/* 카테고리 필터 */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
+      <View style={{ flexDirection: "row", marginBottom: 2, paddingHorizontal: 4 }}>
         {categoryList.map((c) => (
           <TouchableOpacity
             key={c}
             style={[styles.categoryBtn, c === activeCategory && styles.categoryActive]}
             onPress={() => setActiveCategory(c)}
           >
-            <Text style={{
-              color: c === activeCategory ? "#fff" : "#666",
-              fontWeight: "bold"
-            }}>{c}</Text>
+            <Text style={{ color: c === activeCategory ? "#fff" : "#666", fontWeight: "bold" }}>
+              {c}
+            </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
+
       {/* 지도영역 */}
       <View style={styles.mapContainer}>
         {/* 가상 도로 */}
@@ -72,16 +74,14 @@ export default function MainScreen() {
         <View style={[styles.roadV, { left: "25%" }]} />
         <View style={[styles.roadV, { left: "50%" }]} />
         <View style={[styles.roadV, { left: "75%" }]} />
+
         {/* 마커들 */}
         {truckList
           .filter((t) => activeCategory === "전체" || t.category === activeCategory)
           .map((truck) => (
             <TouchableOpacity
               key={truck.name}
-              style={[
-                styles.truckMarker,
-                { top: truck.top, left: truck.left }
-              ]}
+              style={[styles.truckMarker, { top: truck.top, left: truck.left }]}
               onPress={() => handleShowTruck(truck)}
             >
               <View style={[styles.truckIcon, { backgroundColor: truck.color }]}>
@@ -90,17 +90,20 @@ export default function MainScreen() {
               <Text style={styles.truckLabel}>{truck.name}</Text>
             </TouchableOpacity>
           ))}
+
         {/* 내 위치 버튼 */}
         <TouchableOpacity style={styles.locationBtn}>
           <Icon name="location-arrow" size={22} color="#2196f3" />
         </TouchableOpacity>
       </View>
+
       {/* 바텀시트 (모달) */}
-      <Modal visible={!!selectedTruck} transparent animationType="slide">
+      <Modal visible={!!selectedTruck} transparent animationType="slide" onRequestClose={handleHideTruck}>
         <View style={styles.bottomSheetOverlay}>
           <View style={styles.bottomSheet}>
             {/* 드래그 핸들 */}
             <View style={styles.dragHandle} />
+
             <ScrollView>
               <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 18 }}>
                 <View style={styles.detailTruckIcon}>
@@ -116,9 +119,11 @@ export default function MainScreen() {
                       <Text style={{ fontSize: 12, color: "#fff", marginLeft: 4 }}>위생인증</Text>
                     </View>
                   </View>
+
                   <Text style={{ fontSize: 13, color: "#666", marginTop: 3 }}>
-                    ★ {selectedTruck?.rating} ({selectedTruck?.reviews}) · {selectedTruck?.category}
+                    {"★ "}{selectedTruck?.rating} ({selectedTruck?.reviews}) {"· "} {selectedTruck?.category}
                   </Text>
+
                   <View style={{ flexDirection: "row", marginTop: 4 }}>
                     <Text style={selectedTruck?.status === "영업중" ? styles.openBadge : styles.closedBadge}>
                       {selectedTruck?.status}
@@ -127,6 +132,7 @@ export default function MainScreen() {
                   </View>
                 </View>
               </View>
+
               {/* 구독/전화 */}
               <View style={{ flexDirection: "row", marginBottom: 20 }}>
                 <TouchableOpacity
@@ -138,11 +144,13 @@ export default function MainScreen() {
                     {isSubscribed ? "구독중" : "구독하기"}
                   </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity style={styles.callBtn} onPress={callTruck}>
                   <Icon name="phone" size={16} color="#444" />
                   <Text style={{ marginLeft: 8, color: "#444" }}>전화하기</Text>
                 </TouchableOpacity>
               </View>
+
               {/* 메뉴 예시 */}
               <Text style={styles.menuTitle}>메뉴</Text>
               <View style={styles.menuBox}>
@@ -155,17 +163,23 @@ export default function MainScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
+
               {/* 리뷰 예시 */}
               <Text style={styles.menuTitle}>리뷰</Text>
               <View style={styles.reviewBox}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View style={styles.reviewAvatar}><Text style={{ color: "#fff" }}>김</Text></View>
+                  <View style={styles.reviewAvatar}>
+                    <Text style={{ color: "#fff" }}>김</Text>
+                  </View>
                   <Text style={styles.reviewUser}>김**</Text>
-                  <Text style={styles.reviewStar}>★★★★★</Text>
+                  <Text style={styles.reviewStar}>{"★★★★★"}</Text>
                   <Text style={styles.reviewDate}>2024.01.15</Text>
                 </View>
-                <Text style={styles.reviewText}>정말 맛있어요! 문어가 신선하고 소스도 완벽합니다.</Text>
+                <Text style={styles.reviewText}>
+                  정말 맛있어요! 문어가 신선하고 소스도 완벽합니다.
+                </Text>
               </View>
+
               {/* 닫기 */}
               <TouchableOpacity style={styles.closeBtn} onPress={handleHideTruck}>
                 <Text style={{ color: "#444" }}>닫기</Text>
@@ -177,6 +191,7 @@ export default function MainScreen() {
     </SafeAreaView>
   );
 }
+
 
 // 스타일 정의(생략, 위 예시 코드 styles 참조)
 const styles = StyleSheet.create({
