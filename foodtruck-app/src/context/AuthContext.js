@@ -16,21 +16,26 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userType, setUserType] = useState(null);
   // ❗ 수정: 새로 만든 스토어 함수 가져오기
-  const { setUserData, setPartnerData, logout: clearStore } = useAppStore();
+  const { setLoginData, logout: clearStore } = useAppStore();
 
   const API_BASE_URL = Platform.OS === 'ios' 
     ? 'http://localhost:8080' 
     : 'http://10.0.2.2:8080';
 
-  // ❗ 수정된 login 함수
-  const login = async (email, password) => {
+  const login = async (email, password, expectedRole) => {
     try {
-      console.log('🔐 로그인 시도:', { email });
+      console.log('🔐 로그인 시도:', { email, expectedRole });
       
       const response = await fetch(`${API_BASE_URL}/api/users/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+          role: expectedRole // 백엔드에서 role 검증을 위해 전달
+        })
       });
 
       if (!response.ok) {
@@ -41,20 +46,27 @@ export const AuthProvider = ({ children }) => {
       const loginResponse = await response.json();
       console.log('✅ 로그인 성공:', loginResponse);
 
-      const { user, partnerDetails } = loginResponse;
-
-      // 1. 기본 사용자 정보는 항상 저장
-      setUserData(user);
-      setUserType(user.role); // 사용자 타입 설정
-
-      // 2. 파트너 상세 정보가 있는 경우에만 추가로 저장
-      if (partnerDetails) {
-        setPartnerData(partnerDetails);
+      // 응답에서 받은 사용자 역할이 expectedRole과 일치하는지 확인
+      if (loginData.user?.role !== expectedRole) {
+        throw new Error('선택하신 사용자 유형과 계정 정보가 일치하지 않습니다.');
       }
 
+      // 사업자인 경우 partnerDetails의 데이터를 적절히 매핑
+      if (loginData.user.role === 'OPERATOR' && loginData.partnerDetails) {
+        const mappedData = {
+          user: loginData.user,
+          foodTruck: loginData.partnerDetails.foodTruck,
+          menus: loginData.partnerDetails.menus,
+          todaySales: loginData.partnerDetails.todaySales
+        };
+        setLoginData(mappedData);
+      } else {
+        // 일반 사용자인 경우
+        setLoginData({ user: loginData.user });
+      }
+      
       setIsLoggedIn(true);
-      return true;
-
+      return loginData;
     } catch (error) {
       console.error('❌ 로그인 오류:', error);
       Alert.alert('로그인 실패', '이메일과 비밀번호를 확인해주세요.');
@@ -75,7 +87,7 @@ export const AuthProvider = ({ children }) => {
           name: userData.name,
           email: userData.email,
           password: userData.password,
-          role: userType === 'partner' ? 'FOOD_TRUCK_OWNER' : 'CUSTOMER'
+          role: userData.role
         })
       });
 
@@ -98,36 +110,45 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setIsLoggedIn(false);
-    setUserType(null);
     clearStore();
-  };
-
-  const setUserTypeAndNavigate = (type) => {
-    setUserType(type);
   };
 
   const fetchTodaySales = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/today-sales`);
+      // Zustand 스토어에서 현재 로그인된 사용자 정보를 가져옵니다
+      const { user } = useAppStore.getState();
       
+      if (!user?.id) {
+        console.warn('❌ 사용자 ID가 없어 매출 정보를 가져올 수 없습니다.');
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}/api/users/${user.id}/today-sales`); // 사용자 ID를 URL에 포함
+
       if (response.ok) {
         const salesData = await response.json();
         console.log('💰 오늘 매출 정보:', salesData);
-        setTodaySales(salesData);
+        // setTodaySales는 useAppStore에서 가져온 것이 아니므로,
+        // useAppStore에 setTodaySales 액션이 있다면 그것을 사용해야 합니다.
+        // 현재 useAppStore에는 setLoginData만 있으므로, setTodaySales 액션을 추가해야 합니다.
+        // 임시로 console.log로 대체하거나, useAppStore에 추가 후 사용하세요.
+        // setTodaySales(salesData); 
+        useAppStore.getState().setTodaySales(salesData); // ✅ 이렇게 호출해야 합니다.
+      } else {
+        const errorData = await response.json();
+        console.error('❌ 매출 정보 가져오기 오류:', errorData.message);
       }
     } catch (error) {
       console.error('❌ 매출 정보 가져오기 오류:', error);
+      Alert.alert('오류', '매출 정보를 가져오지 못했습니다.');
     }
   };
 
   const value = {
     isLoggedIn,
-    userType,
     login,
     logout,
     signUp,
-    setUserTypeAndNavigate,
-    // fetchTodaySales, // 제거
+    fetchTodaySales,
   };
 
   return (

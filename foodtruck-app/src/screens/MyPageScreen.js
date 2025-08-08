@@ -6,17 +6,33 @@ import {
   TouchableOpacity,
   StyleSheet,
   Switch,
-  StatusBar,
+  Alert, // ✅ Alert를 사용하기 위해 추가
 } from "react-native";
-import { useAppStore } from "../stores/useAppStore"; // ✅ 추가
-import { NavigationContainer } from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { useAppStore } from "../stores/useAppStore";
+import { useAuth } from "../context/AuthContext"; // ✅ 로그아웃 함수를 위해 추가
 
 const MyPageScreen = () => {
-  const { user, foodTruck } = useAppStore(); // ✅ zustand 상태 불러오기
+  const { user, foodTruck } = useAppStore(); // Zustand에서 정보 가져오기
+  const { logout } = useAuth(); // AuthContext에서 로그아웃 함수 가져오기
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationSharing, setLocationSharing] = useState(true);
+
+  // 로그아웃 확인창을 띄우는 함수
+  const handleLogout = () => {
+    Alert.alert(
+      "로그아웃",
+      "정말로 로그아웃 하시겠습니까?",
+      [
+        { text: "취소", style: "cancel" },
+        { 
+          text: "로그아웃", 
+          style: "destructive",
+          onPress: () => logout() // ✅ 실제 로그아웃 함수 호출
+        }
+      ]
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -24,6 +40,7 @@ const MyPageScreen = () => {
         <Text style={styles.headerTitle}>마이페이지</Text>
       </View>
 
+      {/* --- 프로필 섹션 (기존과 동일) --- */}
       <View style={styles.profileSection}>
         <View style={styles.profileImageContainer}>
           <Text style={styles.profileEmoji}>👨‍🍳</Text>
@@ -37,6 +54,7 @@ const MyPageScreen = () => {
         </TouchableOpacity>
       </View>
 
+      {/* --- 내 푸드트럭 섹션 (정보 표시 부분만 수정) --- */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>내 푸드트럭</Text>
         <View style={styles.card}>
@@ -45,12 +63,11 @@ const MyPageScreen = () => {
               <Text style={styles.emojiLarge}>🚚</Text>
             </View>
             <View style={styles.truckDetails}>
-              <Text style={styles.truckName}>{foodTruck?.name || "이름 없음"}</Text>
+              {/* ❗ 수정: foodTruck.name을 사용 */}
+              <Text style={styles.truckName}>{foodTruck?.name || "푸드트럭 이름 없음"}</Text>
+              {/* ❗ 수정: foodTruck.description을 사용 */}
               <Text style={styles.truckSubInfo}>
-                차량번호: {foodTruck?.vehicleNumber || "정보 없음"}
-              </Text>
-              <Text style={styles.truckSubInfo}>
-                크기: {foodTruck?.size || "정보 없음"}
+                {foodTruck?.description || "설명이 없습니다."}
               </Text>
             </View>
           </View>
@@ -60,7 +77,7 @@ const MyPageScreen = () => {
         </View>
       </View>
 
-      {/* 설정 */}
+      {/* --- 설정 섹션 (기존과 동일) --- */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>설정</Text>
         <View style={styles.card}>
@@ -97,7 +114,7 @@ const MyPageScreen = () => {
         </View>
       </View>
 
-      {/* 지원 */}
+      {/* --- 지원 섹션 (기존과 동일) --- */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>지원</Text>
         <View style={styles.card}>
@@ -120,10 +137,12 @@ const MyPageScreen = () => {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton}>
+      {/* --- 로그아웃 버튼 (기능 연결) --- */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>로그아웃</Text>
       </TouchableOpacity>
 
+      {/* --- 버전 정보 (기존과 동일) --- */}
       <View style={styles.versionInfo}>
         <Text style={styles.versionText}>앱 버전 1.0.0</Text>
       </View>
@@ -133,6 +152,7 @@ const MyPageScreen = () => {
 
 export default MyPageScreen;
 
+// (스타일 코드는 기존과 동일합니다)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -161,7 +181,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: "#FF6B35",
+    backgroundColor: "#FFEDD5",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 16,
@@ -227,7 +247,9 @@ const styles = StyleSheet.create({
   emojiLarge: {
     fontSize: 30,
   },
-  truckDetails: {},
+  truckDetails: {
+      flex: 1,
+  },
   truckName: {
     fontSize: 16,
     fontWeight: "bold",

@@ -17,7 +17,8 @@ export const useAppStore = create((set) => ({
       todaySales: partnerDetails.todaySales,
     }),
 
-  // 로그아웃 시 모든 상태 초기화
+    setTodaySales: (salesData) => set({ todaySales: salesData }),
+    
   logout: () =>
     set({ user: null, foodTruck: null, menus: [], todaySales: null }),
 }));
