@@ -13,8 +13,9 @@ import {
   Platform
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useAuth } from '../context/AuthContext';
 
-const SignupScreen = ({onBusinessSignup, onBack}) => {
+const SignupScreen = ({onBusinessSignup, onBack, onSuccess}) => {
   const [currentStep, setCurrentStep] = useState(1); // 1: 타입선택, 2: 기본정보, 3: 추가정보
   const [userType, setUserType] = useState(''); // 'customer' or 'business'
   const [formData, setFormData] = useState({
@@ -38,6 +39,8 @@ const SignupScreen = ({onBusinessSignup, onBack}) => {
   });
   const [errors, setErrors] = useState({});
 
+  const { signUp } = useAuth();
+  
   // 입력값 업데이트
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -108,36 +111,47 @@ const SignupScreen = ({onBusinessSignup, onBack}) => {
   };
 
   // 다음 단계로
-  const handleNext = () => {
-    if (currentStep === 1 && !userType) {
-      Alert.alert('알림', '사용자 타입을 선택해주세요');
-      return;
-    }
+  // 1) handleNext 고쳐쓰기 (불필요한 } 제거 + 로직 유지)
+const handleNext = () => {
+  if (currentStep === 1 && !userType) {
+    Alert.alert('알림', '사용자 타입을 선택해주세요');
+    return;
+  }
 
-     // ✅ 1단계에서 사업자 선택 시: 여기서 사업자 회원가입 화면으로 이동
+  // 1단계에서 사업자 선택 → 사업자 회원가입 화면으로 이동
   if (currentStep === 1 && userType === 'business') {
     onBusinessSignup?.();
     return;
   }
 
-    if (currentStep > 1 && !validateStep(currentStep)) {
-      return;
-    }
+  if (currentStep > 1 && !validateStep(currentStep)) {
+    return;
+  }
 
-    if (currentStep === 3) {
-      handleSignup();
-    } else {
-      setCurrentStep(currentStep + 1);
-    }
-  };
+  // 2단계에서 바로 회원가입
+  if (currentStep === 2) {
+    handleSignup();
+    return;
+  }
+
+  setCurrentStep(currentStep + 1);
+};
 
   // 회원가입 처리
-  const handleSignup = () => {
-    Alert.alert(
-      '회원가입 완료',
-      `${userType === 'business' ? '사업자' : '일반사용자'} 회원가입이 완료되었습니다!`,
-      [{ text: '확인', onPress: () => console.log('회원가입 완료') }]
-    );
+  const handleSignup = async () => {
+    try {
+      // 일반 사용자만 여기로 들어옴
+      const ok = await signUp({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: 'CITIZEN',
+      });
+      if (!ok) return; // 실패 시 Alert은 AuthContext에서 처리
+      onSuccess?.();   // ✅ App.js에서 로그인 화면으로 전환
+    } catch (e) {
+      Alert.alert('회원가입 실패', '다시 시도해주세요.');
+    }
   };
 
   // 사용자 타입 선택 화면
@@ -279,7 +293,7 @@ const renderUserTypeSelection = () => (
   // 진행 상태 표시
   const renderProgressBar = () => (
     <View style={styles.progressContainer}>
-      {[1, 2, 3].map((step) => (
+      {[1, 2].map((step) => (
         <View key={step} style={styles.progressStep}>
           <View style={[
             styles.progressCircle,
@@ -292,7 +306,7 @@ const renderUserTypeSelection = () => (
               {step}
             </Text>
           </View>
-          {step < 3 && (
+          {step < 2 && (
             <View style={[
               styles.progressLine,
               currentStep > step && styles.progressLineActive
@@ -325,8 +339,7 @@ const renderUserTypeSelection = () => (
   )}
 
           <Text style={styles.headerTitle}>
-            {currentStep === 1 ? '회원가입' : 
-             currentStep === 2 ? '기본 정보' : '추가 정보'}
+          {currentStep === 1 ? '회원가입' : '기본 정보'}
           </Text>
           <View style={styles.headerRight} />
         </View>
@@ -351,7 +364,7 @@ const renderUserTypeSelection = () => (
             disabled={currentStep === 1 && !userType}
           >
             <Text style={styles.nextButtonText}>
-              {currentStep === 3 ? '회원가입 완료' : '다음'}
+              {currentStep === 2 ? '회원가입' : '다음'}
             </Text>
           </TouchableOpacity>
         </View>
