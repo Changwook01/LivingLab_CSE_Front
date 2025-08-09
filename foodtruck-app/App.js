@@ -8,7 +8,7 @@ import { StartScreen } from "./src/screens/StartScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import SignupScreen from "./src/screens/SignupScreen";
 import BusinessSignupScreen from "./src/screens/BusinessSignupScreen";
-import MainScreen from "./src/screens/MainScreen";
+import MainScreen from "./src/screens/SearchTruck";
 import SubscriptionScreen from "./src/screens/SubscriptionScreen";
 import { useAppStore } from "./src/stores/useAppStore"; 
 import { AuthProvider } from "./src/context/AuthContext";
