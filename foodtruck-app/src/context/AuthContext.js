@@ -94,7 +94,7 @@
         console.log('✅ 회원가입 성공:', result);
 
         // 회원가입 후 자동 로그인
-        const loginSuccess = await login(userData.email, userData.password);
+        const loginSuccess = await login(userData.email, userData.password,userData.role);
         return loginSuccess;
       } catch (error) {
         console.error('❌ 회원가입 오류:', error);

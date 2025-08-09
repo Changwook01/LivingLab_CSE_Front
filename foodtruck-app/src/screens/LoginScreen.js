@@ -9,21 +9,12 @@ import {
 } from "react-native";
 import StatusBarHeader from '../components/StatusBarHeader';
 import { useAuth } from '../context/AuthContext';
-import { useAppStore } from "../stores/useAppStore";   // ✅ Zustand 가져오기
+
 
 const LoginScreen = ({ userType= "customer", onSuccess, onBack }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useAuth();
-
-  const { setLoginData } = useAppStore.getState();
-
-  const handleSubmit = async () => {
-    const expectedRole = userType === "customer" ? "CITIZEN" : "OPERATOR";
-    const res = await login(email, password, expectedRole);  // ✅ 서버 호출 + setLoginData 내부에서 수행
-    if (!res) return;                                        // 실패 시 종료(알림은 내부에서 처리됨)
-    onSuccess?.();                                           // ✅ 성공 후 탭 초기화 등
-  };
 
   const handleLogin = async () => {
     try {
@@ -35,14 +26,6 @@ const LoginScreen = ({ userType= "customer", onSuccess, onBack }) => {
       if (!loginResponseData) {
         return;
       }
-  
-      // Zustand에 바로 저장
-      setLoginData({
-        user: loginResponseData.user,
-        foodTruck: loginResponseData.partnerDetails?.foodTruck ?? null,
-        menus: loginResponseData.partnerDetails?.menus ?? [],
-        todaySales: loginResponseData.partnerDetails?.todaySales ?? null,
-      });
   
       console.log("로그인 성공:", {
         role: loginResponseData.user?.role,
