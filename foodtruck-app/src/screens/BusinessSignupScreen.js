@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const BusinessSignupScreen = () => {
+const BusinessSignupScreen = ({onGoHome}) => {
   const [currentStep, setCurrentStep] = useState(1); // 1: 타입선택, 2: 기본정보, 3: 사업자정보, 4-10: 창업패키지 단계들
   const [signupType, setSignupType] = useState(''); // 'existing' or 'startup'
   const [startupStep, setStartupStep] = useState(1); // 창업 패키지 내부 단계
@@ -490,7 +490,7 @@ const BusinessSignupScreen = () => {
   );
 
   // 승인 대기 화면
-  const renderApprovalWaiting = () => (
+  const renderApprovalWaiting = (onGoHome) => (
     <View style={styles.stepContainer}>
       <View style={styles.approvalContainer}>
         <View style={styles.approvalIcon}>
@@ -504,7 +504,7 @@ const BusinessSignupScreen = () => {
         </Text>
         <TouchableOpacity 
           style={styles.homeButton}
-          onPress={() => console.log('홈으로 이동')}
+          onPress={onGoHome}
         >
           <Text style={styles.homeButtonText}>홈으로 이동</Text>
         </TouchableOpacity>
@@ -552,7 +552,7 @@ const BusinessSignupScreen = () => {
     if (currentStep === 2) return renderBasicInfo();
     if (currentStep === 3) return renderBusinessInfo();
     if (currentStep >= 4 && currentStep <= 10) return renderStartupStep();
-    if (currentStep === 11) return renderApprovalWaiting();
+    if (currentStep === 11) return renderApprovalWaiting(onGoHome);
   };
 
   // 진행 상태 표시

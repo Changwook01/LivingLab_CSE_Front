@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import HomeScreen from "./src/screens/HomeScreen";
 import MenuScreen from "./src/screens/MenuScreen";
@@ -20,10 +20,9 @@ export default function App() {
 
   const { user } = useAppStore();
 
-  const handleAuthSuccess = () => {
-    setAuthScreen(null); // 로그인 화면 닫기
-  };
-  
+  useEffect(() => {
+    if (user) setSelectedTab("home");
+  }, [user?.role]);
   const renderAuth = () => {
     switch (authScreen) {
       case "login":
@@ -38,6 +37,7 @@ export default function App() {
           <SignupScreen
             onSuccess={() => setAuthScreen("login")}
             onBack={() => setAuthScreen("start")}
+            onBusinessSignup={() => setAuthScreen("bizSignup")}
           />
         );
       case "bizSignup":
@@ -45,6 +45,7 @@ export default function App() {
           <BusinessSignupScreen
             onSuccess={() => setAuthScreen("login")}
             onBack={() => setAuthScreen("start")}
+            onGoHome={() => setAuthScreen("start")}
           />
         );
       case "start":

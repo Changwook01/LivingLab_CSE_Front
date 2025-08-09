@@ -114,6 +114,12 @@ const SignupScreen = ({onBusinessSignup, onBack}) => {
       return;
     }
 
+     // ✅ 1단계에서 사업자 선택 시: 여기서 사업자 회원가입 화면으로 이동
+  if (currentStep === 1 && userType === 'business') {
+    onBusinessSignup?.();
+    return;
+  }
+
     if (currentStep > 1 && !validateStep(currentStep)) {
       return;
     }
@@ -175,8 +181,9 @@ const renderUserTypeSelection = () => (
         <TouchableOpacity
           style={[
             styles.userTypeCard,
+            userType === 'business' && styles.userTypeCardSelected
           ]}
-          onPress={onBusinessSignup}
+          onPress={() => setUserType('business')} 
         >
           <View style={styles.userTypeIcon}>
             <Text style={styles.userTypeEmoji}>🚚</Text>
