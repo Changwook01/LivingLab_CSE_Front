@@ -4,7 +4,7 @@ import MapView, { Marker, PROVIDER_GOOGLE, Callout, Circle } from 'react-native-
 import * as Location from 'expo-location';
 import useMapStore from '../stores/useMapStore';
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.8:8080';
+const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.195:8080';
 
 const SearchTruck = () => {
   const [region, setRegion] = useState(null);
@@ -208,6 +208,20 @@ const SearchTruck = () => {
     ],
   });
 
+  // 트럭 메뉴 호출
+  const fetchTruckMenus = async (truckId) => {
+    try {
+      const url = `${API_BASE_URL}/api/menus?foodTruckId=${truckId}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`메뉴 응답 오류: ${res.status}`);
+      const menus = await res.json();
+      return Array.isArray(menus) ? menus : [];
+    } catch (e) {
+      console.warn('메뉴 로드 실패. 목업 사용:', e.message);
+      return null;
+    }
+  };
+
   // 트럭 상세 호출
   const openTruckDetail = async (truck) => {
     try {
@@ -230,6 +244,11 @@ const SearchTruck = () => {
         detail = buildMockTruckDetail(truck);
         setDetailError('네트워크 오류로 임시 데이터를 표시합니다.');
       }
+      // 메뉴 병합 (실제 백엔드 "/api/menus" 사용)
+      const menus = await fetchTruckMenus(truck.id);
+      if (menus) {
+        detail.menus = menus;
+      }
       setTruckDetail(detail);
     } finally {
       setDetailLoading(false);
@@ -248,7 +267,7 @@ const SearchTruck = () => {
     console.log(`🎯 트럭 클릭: ${truck.name}`);
   };
 
-  // 트럭 정보 표시 핸들러
+  // 트럭 정보 표시 핸들러 (Callout 클릭 시 상세 열기)
   const handleTruckCalloutPress = (truck) => {
     // 바로 상세 바텀시트 열기
     openTruckDetail(truck);
@@ -315,12 +334,11 @@ const SearchTruck = () => {
             title={truck.name}
             description={truck.menu || '메뉴 정보 없음'}
             onPress={() => handleTruckPress(truck)}
-            onCalloutPress={() => handleTruckCalloutPress(truck)}
           >
             <View style={styles.truckMarker}>
               <Text style={styles.truckMarkerIcon}>🚚</Text>
             </View>
-            <Callout tooltip onPress={() => openTruckDetail(truck)}>
+            <Callout tooltip onPress={() => handleTruckCalloutPress(truck)}>
               <View style={styles.calloutContainer}>
                 <Text style={styles.calloutTitle}>{truck.name}</Text>
                 <Text style={styles.calloutMenu}>{truck.menu || '메뉴 정보 없음'}</Text>
@@ -445,8 +463,6 @@ const SearchTruck = () => {
         </View>
       )}
 
-      {/* 하단 선택된 트럭 오버레이는 제거되었습니다 */}
-      
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#FF6B35" />
@@ -489,18 +505,24 @@ const SearchTruck = () => {
                 </View>
 
                 <Text style={styles.menuTitle}>메뉴</Text>
-                {(truckDetail?.menus || []).map((m) => (
-                  <View key={m.id} style={styles.menuBox}>
-                    <Text style={styles.menuName}>{m.name}</Text>
-                    <Text style={styles.menuDesc}>{m.desc}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                      <Text style={styles.menuPrice}>{m.price?.toLocaleString()}원</Text>
-                      <TouchableOpacity style={styles.menuOrderBtn}>
-                        <Text style={{ color: '#fff' }}>주문</Text>
-                      </TouchableOpacity>
+                {(truckDetail?.menus || []).map((m) => {
+                  const displayName = m.name ?? m.menuName ?? m.title ?? '메뉴';
+                  const displayDesc = m.desc ?? m.description ?? m.content ?? '';
+                  const rawPrice = m.price ?? m.cost ?? m.amount;
+                  const displayPrice = typeof rawPrice === 'number' ? rawPrice : (parseInt(rawPrice, 10) || 0);
+                  return (
+                    <View key={m.id ?? displayName} style={styles.menuBox}>
+                      <Text style={styles.menuName}>{displayName}</Text>
+                      {!!displayDesc && <Text style={styles.menuDesc}>{displayDesc}</Text>}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                        <Text style={styles.menuPrice}>{displayPrice.toLocaleString()}원</Text>
+                        <TouchableOpacity style={styles.menuOrderBtn}>
+                          <Text style={{ color: '#fff' }}>주문</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
-                ))}
+                  );
+                })}
 
                 <TouchableOpacity style={styles.closeBtn} onPress={closeTruckDetail}>
                   <Text style={{ color: '#444' }}>닫기</Text>
@@ -700,47 +722,6 @@ const styles = StyleSheet.create({
   truckListItemArrowText: {
     fontSize: 16,
     color: '#ccc',
-  },
-  truckInfoOverlay: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  truckInfoContainer: {
-    alignItems: 'center',
-  },
-  truckInfoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  truckInfoMenu: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  truckInfoButton: {
-    backgroundColor: '#FF6B35',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  truckInfoButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
   },
   closeButton: {
     position: 'absolute',
