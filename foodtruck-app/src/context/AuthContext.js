@@ -18,9 +18,7 @@
     // ❗ 수정: 새로 만든 스토어 함수 가져오기
     const { setUserData, setPartnerData, logout: clearStore } = useAppStore();
 
-    const API_BASE_URL = Platform.OS === 'ios' 
-      ? 'http://localhost:8080' 
-      : 'http://10.0.2.2:8080';
+    const API_BASE_URL = 'http://174.129.50.202:8080';
 
     const login = async (email, password, expectedRole) => {
       try {

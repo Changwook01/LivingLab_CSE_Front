@@ -1,9 +1,7 @@
 import { Platform } from 'react-native';
 import axios from 'axios';
 
-const API_BASE_URL = Platform.OS === 'ios'
-  ? 'http://localhost:8080/api'
-  : 'http://10.0.2.2:8080/api';
+const API_BASE_URL = 'http://174.129.50.202:8080';
 
 export const menuService = {
   getMenusByFoodTruckId: async (foodTruckId) => {

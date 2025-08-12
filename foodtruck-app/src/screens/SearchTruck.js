@@ -4,7 +4,7 @@ import MapView, { Marker, PROVIDER_GOOGLE, Callout, Circle } from 'react-native-
 import * as Location from 'expo-location';
 import useMapStore from '../stores/useMapStore';
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.195:8080';
+const API_BASE_URL = 'http://174.129.50.202:8080';
 
 const SearchTruck = () => {
   const [region, setRegion] = useState(null);

@@ -6,7 +6,7 @@ import useMapStore from '../stores/useMapStore';
 import { useAppStore } from '../stores/useAppStore';
 
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://192.168.45.114:8080'; // ◀️ 본인 IP 주소로 수정!
+const API_BASE_URL = 'http://174.129.50.202:8080';
 
 const ZoneScreen = () => {
   const [region, setRegion] = useState(null);
