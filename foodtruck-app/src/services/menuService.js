@@ -1,76 +1,64 @@
 import { Platform } from 'react-native';
 import axios from 'axios';
 
+// src/services/menuService.js
 const API_BASE_URL = 'http://174.129.50.202:8080';
 
+async function handleJson(res, fallbackMsg) {
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || fallbackMsg);
+  }
+  // 204 같은 경우 대비
+  try { return await res.json(); } catch { return null; }
+}
+
 export const menuService = {
+  // 메뉴 목록 (백엔드가 ?foodTruckId= 로 받는다고 가정)
   getMenusByFoodTruckId: async (foodTruckId) => {
-    const response = await fetch(`${API_BASE_URL}/menus/${foodTruckId}`);
-    if (!response.ok) throw new Error('메뉴 불러오기 실패');
-    return await response.json();
+    const res = await fetch(`${API_BASE_URL}/api/menus?foodTruckId=${foodTruckId}`);
+    return handleJson(res, '메뉴 불러오기 실패');
   },
 
+  // 전체 메뉴
   getAllMenus: async () => {
-    const response = await axios.get(`${API_BASE_URL}/menus`);
-    return response.data;
+    const res = await fetch(`${API_BASE_URL}/api/menus`);
+    return handleJson(res, '전체 메뉴 불러오기 실패');
   },
 
+  // 메뉴 추가
+  // menuData 예: { foodTruckId, name, price, description, available: true }
   addMenu: async (menuData) => {
-    const response = await fetch(`${API_BASE_URL}/menus`, {
+    const res = await fetch(`${API_BASE_URL}/api/menus`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(menuData),
     });
-    if (!response.ok) throw new Error('메뉴 추가 실패');
-    return await response.json();
+    return handleJson(res, '메뉴 추가 실패');
   },
 
+  // 메뉴 수정
   updateMenu: async (menuId, data) => {
-    const response = await fetch(`${API_BASE_URL}/menus/${menuId}`, {
+    const res = await fetch(`${API_BASE_URL}/api/menus/${menuId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('메뉴 수정 실패');
-    return await response.json();
+    return handleJson(res, '메뉴 수정 실패');
   },
 
+  // 메뉴 삭제
   deleteMenu: async (menuId) => {
-    const response = await fetch(`${API_BASE_URL}/menus/${menuId}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) throw new Error('메뉴 삭제 실패');
+    const res = await fetch(`${API_BASE_URL}/api/menus/${menuId}`, { method: 'DELETE' });
+    return handleJson(res, '메뉴 삭제 실패');
   },
 
+  // 판매 가능 토글 (백엔드가 /toggle 받는다고 가정)
   toggleAvailability: async (menuId) => {
-    const response = await fetch(`${API_BASE_URL}/menus/${menuId}/toggle`, {
+    const res = await fetch(`${API_BASE_URL}/api/menus/${menuId}/toggle`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
-  
-    if (!response.ok) {
-      throw new Error('Failed to toggle availability');
-    }
-    
-    if (foodTruckId !== undefined && foodTruckId !== null) {
-      axios.get(`/api/menus?foodTruckId=${foodTruckId}`);
-    }
-
-    axios.post("/api/login", credentials)
-  .then(res => {
-    const { user, foodTruck, menus, todaySales } = res.data;
-
-    console.log("✅ 로그인 성공 - user:", user);
-
-    // 여기서 user만 넘겨도 되고, 필요한 거 더 넘길 수도 있음
-    handleLoginSuccess(user, "customer");
-  })
-  .catch(err => {
-    console.error("Login error:", err);
-  });
-    
-    return await response.json();
+    return handleJson(res, '판매 상태 변경 실패');
   },
 };
