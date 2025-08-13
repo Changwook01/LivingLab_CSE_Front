@@ -3,6 +3,8 @@ import { StyleSheet, View, Text, ActivityIndicator, Platform, TouchableOpacity, 
 import MapView, { Marker, PROVIDER_GOOGLE, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 import useMapStore from '../stores/useMapStore';
+import { useAppStore } from '../stores/useAppStore';
+import subscriptionService from '../services/subscriptionService';
 
 const API_BASE_URL = 'http://174.129.50.202:8080';
 
@@ -24,8 +26,13 @@ const SearchTruck = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
   
+  // 구독 관련 상태
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  
   // Zustand store 사용
   const { targetLocation, clearTargetLocation } = useMapStore();
+  const { user } = useAppStore();
   const mapRef = useRef(null);
 
   useEffect(() => {
@@ -250,6 +257,9 @@ const SearchTruck = () => {
         detail.menus = menus;
       }
       setTruckDetail(detail);
+      
+      // 구독 상태 확인
+      await checkSubscriptionStatus(truck.id);
     } finally {
       setDetailLoading(false);
     }
@@ -259,6 +269,51 @@ const SearchTruck = () => {
     setIsDetailVisible(false);
     setTruckDetail(null);
     setDetailError(null);
+    setIsSubscribed(false);
+  };
+
+  // 구독 상태 확인
+  const checkSubscriptionStatus = async (foodTruckId) => {
+    if (!user?.id) {
+      console.log('사용자 정보가 없어 구독 상태를 확인할 수 없습니다.');
+      return;
+    }
+
+    try {
+      const subscribed = await subscriptionService.checkSubscription(user.id, foodTruckId);
+      setIsSubscribed(subscribed);
+    } catch (error) {
+      console.error('구독 상태 확인 오류:', error);
+      setIsSubscribed(false);
+    }
+  };
+
+  // 구독/구독 취소 처리
+  const handleSubscription = async () => {
+    if (!user?.id || !truckDetail?.id) {
+      Alert.alert('오류', '사용자 정보 또는 푸드트럭 정보가 없습니다.');
+      return;
+    }
+
+    setSubscriptionLoading(true);
+    try {
+      if (isSubscribed) {
+        // 구독 취소
+        await subscriptionService.unsubscribe(user.id, truckDetail.id);
+        setIsSubscribed(false);
+        Alert.alert('구독 취소', '구독이 취소되었습니다.');
+      } else {
+        // 구독 요청
+        await subscriptionService.subscribe(user.id, truckDetail.id);
+        setIsSubscribed(true);
+        Alert.alert('구독 완료', '구독이 완료되었습니다.');
+      }
+    } catch (error) {
+      console.error('구독 처리 오류:', error);
+      Alert.alert('오류', '구독 처리 중 오류가 발생했습니다.');
+    } finally {
+      setSubscriptionLoading(false);
+    }
   };
 
   // 트럭 클릭 핸들러
@@ -495,6 +550,25 @@ const SearchTruck = () => {
                       ★ {truckDetail?.rating ?? '4.5'} ({truckDetail?.reviews ?? '123'}) · {truckDetail?.operatingStatus ?? '영업중'}
                     </Text>
                   </View>
+                  {/* 구독 버튼 */}
+                  {user && (
+                    <TouchableOpacity
+                      style={[
+                        styles.subscriptionButton,
+                        isSubscribed && styles.subscriptionButtonActive
+                      ]}
+                      onPress={handleSubscription}
+                      disabled={subscriptionLoading}
+                    >
+                      {subscriptionLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.subscriptionButtonText}>
+                          {isSubscribed ? '구독 취소' : '구독하기'}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 <Text style={styles.menuTitle}>소개</Text>
@@ -592,6 +666,21 @@ const styles = StyleSheet.create({
   menuPrice: { fontSize: 15, color: '#FF9800', fontWeight: 'bold', marginRight: 10 },
   menuOrderBtn: { backgroundColor: '#FF9800', borderRadius: 8, paddingVertical: 4, paddingHorizontal: 12, marginLeft: 10 },
   closeBtn: { marginTop: 12, backgroundColor: '#f2f2f2', borderRadius: 8, alignItems: 'center', padding: 13 },
+  subscriptionButton: {
+    backgroundColor: '#FF6B35',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginLeft: 10,
+  },
+  subscriptionButtonActive: {
+    backgroundColor: '#E53935',
+  },
+  subscriptionButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   refreshButton: {
     position: 'absolute',
     top: 50,
